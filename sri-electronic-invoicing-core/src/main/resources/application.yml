@@ -1,0 +1,38 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/sri_einvoice
+    username: sri
+    password: sri
+  jpa:
+    hibernate:
+      ddl-auto: update
+  flyway:
+    enabled: false
+    locations: classpath:db/migration
+
+app:
+  offline:
+    enabled: false
+  retry:
+    max-attempts: 5
+    backoff-seconds: 30
+    scheduler-ms: 60000
+  signature:
+    type: dummy
+    p12-path:
+    p12-password:
+    key-alias:
+  sri:
+    client: soap
+    timeout-seconds: 30
+    xml-version: 1.0.0
+    pruebas:
+      recepcion-url: https://celcer.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline?wsdl
+      autorizacion-url: https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl
+      consulta-comprobante-url: https://celcer.sri.gob.ec/comprobantes-electronicos-ws/ConsultaComprobante?wsdl
+      consulta-factura-url: https://celcer.sri.gob.ec/comprobantes-electronicos-ws/ConsultaFactura?wsdl
+    produccion:
+      recepcion-url: https://cel.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline?wsdl
+      autorizacion-url: https://cel.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl
+      consulta-comprobante-url: https://cel.sri.gob.ec/comprobantes-electronicos-ws/ConsultaComprobante?wsdl
+      consulta-factura-url: https://cel.sri.gob.ec/comprobantes-electronicos-ws/ConsultaFactura?wsdl

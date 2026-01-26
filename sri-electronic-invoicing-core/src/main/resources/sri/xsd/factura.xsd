@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+  <xs:simpleType name="ambienteType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[12]"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="tipoEmisionType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[12]"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="codDocType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="0[134-7]"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="tipoIdentificacionType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="0[4-8]"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="digits1">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\d{1}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="digits2">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\d{2}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="digits3">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\d{3}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="digits9">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\d{9}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="digits13">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\d{13}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="digits49">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\d{49}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="digits1to4">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\d{1,4}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="text15">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="15"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="text20">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="20"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="text25">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="25"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="text300">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="300"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="dateDDMMYYYY">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\d{2}/\d{2}/\d{4}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="decimal14_6">
+    <xs:restriction base="xs:decimal">
+      <xs:totalDigits value="14"/>
+      <xs:fractionDigits value="6"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="infoTributariaType">
+    <xs:sequence>
+      <xs:element name="ambiente" type="ambienteType"/>
+      <xs:element name="tipoEmision" type="tipoEmisionType"/>
+      <xs:element name="razonSocial" type="text300"/>
+      <xs:element name="nombreComercial" type="text300"/>
+      <xs:element name="ruc" type="digits13"/>
+      <xs:element name="claveAcceso" type="digits49"/>
+      <xs:element name="codDoc" type="codDocType"/>
+      <xs:element name="estab" type="digits3"/>
+      <xs:element name="ptoEmi" type="digits3"/>
+      <xs:element name="secuencial" type="digits9"/>
+      <xs:element name="dirMatriz" type="text300"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="totalImpuestoType">
+    <xs:sequence>
+      <xs:element name="codigo" type="digits1"/>
+      <xs:element name="codigoPorcentaje" type="digits1to4"/>
+      <xs:element name="baseImponible" type="decimal14_6"/>
+      <xs:element name="valor" type="decimal14_6"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="totalConImpuestosType">
+    <xs:sequence>
+      <xs:element name="totalImpuesto" type="totalImpuestoType" minOccurs="1" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="infoFacturaType">
+    <xs:sequence>
+      <xs:element name="fechaEmision" type="dateDDMMYYYY"/>
+      <xs:element name="dirEstablecimiento" type="text300"/>
+      <xs:element name="tipoIdentificacionComprador" type="tipoIdentificacionType"/>
+      <xs:element name="razonSocialComprador" type="text300"/>
+      <xs:element name="identificacionComprador" type="text20"/>
+      <xs:element name="totalSinImpuestos" type="decimal14_6"/>
+      <xs:element name="totalDescuento" type="decimal14_6"/>
+      <xs:element name="totalConImpuestos" type="totalConImpuestosType"/>
+      <xs:element name="propina" type="decimal14_6"/>
+      <xs:element name="importeTotal" type="decimal14_6"/>
+      <xs:element name="moneda" type="text15"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="impuestoType">
+    <xs:sequence>
+      <xs:element name="codigo" type="digits1"/>
+      <xs:element name="codigoPorcentaje" type="digits1to4"/>
+      <xs:element name="tarifa" type="decimal14_6"/>
+      <xs:element name="baseImponible" type="decimal14_6"/>
+      <xs:element name="valor" type="decimal14_6"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="impuestosType">
+    <xs:sequence>
+      <xs:element name="impuesto" type="impuestoType" minOccurs="1" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="detalleType">
+    <xs:sequence>
+      <xs:element name="codigoPrincipal" type="text25"/>
+      <xs:element name="descripcion" type="text300"/>
+      <xs:element name="cantidad" type="decimal14_6"/>
+      <xs:element name="precioUnitario" type="decimal14_6"/>
+      <xs:element name="descuento" type="decimal14_6"/>
+      <xs:element name="precioTotalSinImpuesto" type="decimal14_6"/>
+      <xs:element name="impuestos" type="impuestosType"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="detallesType">
+    <xs:sequence>
+      <xs:element name="detalle" type="detalleType" minOccurs="1" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="factura">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="infoTributaria" type="infoTributariaType"/>
+        <xs:element name="infoFactura" type="infoFacturaType"/>
+        <xs:element name="detalles" type="detallesType"/>
+      </xs:sequence>
+      <xs:attribute name="id" use="required" fixed="comprobante"/>
+      <xs:attribute name="version" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="1.0.0"/>
+            <xs:enumeration value="1.1.0"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

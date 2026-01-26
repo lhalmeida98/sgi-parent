@@ -1,0 +1,56 @@
+spring:
+  datasource:
+      url: jdbc:postgresql://aws-1-sa-east-1.pooler.supabase.com:5432/postgres?sslmode=require
+      username: postgres.pqbqrvqmtjixymawcyst
+      password: gSMk2uKBBmzwnSgY
+      driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    locations: classpath:db/migration/sgi
+    table: flyway_schema_history_sgi
+    baseline-on-migrate: true
+    baseline-version: 0
+logging:
+  level:
+    org.hibernate.SQL: INFO
+    org.hibernate.orm.jdbc.bind: TRACE
+    com.zaxxer.hikari.HikariConfig: INFO
+    com.zaxxer.hikari: INFO
+server:
+  port: 8081
+
+app:
+  sri:
+    client: soap
+    xmlVersion: "1.0.0"
+    pruebas:
+      recepcion-url: https://celcer.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline?wsdl
+      autorizacion-url: https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl
+      consulta-comprobante-url: https://celcer.sri.gob.ec/comprobantes-electronicos-ws/ConsultaComprobante?wsdl
+      consulta-factura-url: https://celcer.sri.gob.ec/comprobantes-electronicos-ws/ConsultaFactura?wsdl
+    produccion:
+      recepcion-url: https://cel.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline?wsdl
+      autorizacion-url: https://cel.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl
+      consulta-comprobante-url: https://cel.sri.gob.ec/comprobantes-electronicos-ws/ConsultaComprobante?wsdl
+      consulta-factura-url: https://cel.sri.gob.ec/comprobantes-electronicos-ws/ConsultaFactura?wsdl
+  offline:
+    enabled: false
+  signature:
+    type: pkcs12
+    storageDir: storage/firmas
+  facturas:
+    sri:
+      max-intentos: 10
+    scheduler:
+      enabled: true
+      fixed-delay-ms: 5000
+  security:
+    jwt:
+      secret: "Odhdz2Lrt9vEtM4r8hf4x68tAaqihJJzgLz91OFOddXKgKdOB5KlxtYn3XO__LsJ"
+      expiration-seconds: 86400

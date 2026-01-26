@@ -1,0 +1,108 @@
+package ec.sgi.backend.infrastructure.persistence.entity;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
+@Entity
+@Table(name = "empresas")
+public class EmpresaEntity {
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+
+  private String ambiente;
+  private String tipoEmision;
+  private String razonSocial;
+  private String nombreComercial;
+  private String ruc;
+  private String dirMatriz;
+  private String estab;
+  private String ptoEmi;
+  private String secuencial;
+
+  public EmpresaEntity() {
+  }
+
+  public Long getId() {
+    return id;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
+  }
+
+  public String getAmbiente() {
+    return ambiente;
+  }
+
+  public void setAmbiente(String ambiente) {
+    this.ambiente = ambiente;
+  }
+
+  public String getTipoEmision() {
+    return tipoEmision;
+  }
+
+  public void setTipoEmision(String tipoEmision) {
+    this.tipoEmision = tipoEmision;
+  }
+
+  public String getRazonSocial() {
+    return razonSocial;
+  }
+
+  public void setRazonSocial(String razonSocial) {
+    this.razonSocial = razonSocial;
+  }
+
+  public String getNombreComercial() {
+    return nombreComercial;
+  }
+
+  public void setNombreComercial(String nombreComercial) {
+    this.nombreComercial = nombreComercial;
+  }
+
+  public String getRuc() {
+    return ruc;
+  }
+
+  public void setRuc(String ruc) {
+    this.ruc = ruc;
+  }
+
+  public String getDirMatriz() {
+    return dirMatriz;
+  }
+
+  public void setDirMatriz(String dirMatriz) {
+    this.dirMatriz = dirMatriz;
+  }
+
+  public String getEstab() {
+    return estab;
+  }
+
+  public void setEstab(String estab) {
+    this.estab = estab;
+  }
+
+  public String getPtoEmi() {
+    return ptoEmi;
+  }
+
+  public void setPtoEmi(String ptoEmi) {
+    this.ptoEmi = ptoEmi;
+  }
+
+  public String getSecuencial() {
+    return secuencial;
+  }
+
+  public void setSecuencial(String secuencial) {
+    this.secuencial = secuencial;
+  }
+}
