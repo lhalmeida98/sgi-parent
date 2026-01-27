@@ -1,0 +1,26 @@
+# VCS
+.git
+.gitignore
+
+# Maven / build outputs
+**/target
+**/.mvn/wrapper
+
+# IDEs / editors
+.idea
+*.iml
+.vscode
+.classpath
+.project
+.settings
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Node / frontend (if any)
+**/node_modules
+
