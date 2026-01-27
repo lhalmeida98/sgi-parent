@@ -7,6 +7,14 @@ Backend orquestador para SGI. Consume `sri-electronic-invoicing-core` y no dupli
 - Spring Boot 3.3.x
 - PostgreSQL
 
+## Nota Java 21 + firma XML
+XAdES4j usa Guice 4.x que en Java 21 necesita abrir `java.lang` para generar bytecode. Si ves el error
+`XadesProfileResolutionException: Unable to load cache item`, agrega este VM option en tu IDE:
+```
+--add-opens java.base/java.lang=ALL-UNNAMED
+```
+Si corres con Maven desde la raiz (`/home/henry/Documentos/Proyectos /sgi-parent`), ya esta configurado en `.mvn/jvm.config`.
+
 ## Estructura
 ```
 src/main/java/ec/sgi/backend
