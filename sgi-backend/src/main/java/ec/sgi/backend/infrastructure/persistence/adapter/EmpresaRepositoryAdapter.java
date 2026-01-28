@@ -47,7 +47,10 @@ public class EmpresaRepositoryAdapter implements EmpresaRepository {
         entity.getDirMatriz(),
         entity.getEstab(),
         entity.getPtoEmi(),
-        entity.getSecuencial()
+        entity.getSecuencial(),
+        entity.getLogoRuta(),
+        entity.isObligadoContabilidad(),
+        entity.isRegimenRimpe()
     );
   }
 
@@ -63,6 +66,9 @@ public class EmpresaRepositoryAdapter implements EmpresaRepository {
     entity.setEstab(empresa.estab());
     entity.setPtoEmi(empresa.ptoEmi());
     entity.setSecuencial(empresa.secuencial());
+    entity.setLogoRuta(empresa.logoRuta());
+    entity.setObligadoContabilidad(empresa.obligadoContabilidad());
+    entity.setRegimenRimpe(empresa.regimenRimpe());
     return entity;
   }
 }

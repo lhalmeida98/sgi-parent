@@ -12,6 +12,8 @@ import ec.sgi.backend.application.port.in.CrearEmpresaUseCase;
 import ec.sgi.backend.application.port.in.ListarEmpresasUseCase;
 import ec.sgi.backend.application.port.in.SubirFirmaElectronicaCommand;
 import ec.sgi.backend.application.port.in.SubirFirmaElectronicaUseCase;
+import ec.sgi.backend.application.port.in.SubirLogoEmpresaCommand;
+import ec.sgi.backend.application.port.in.SubirLogoEmpresaUseCase;
 import ec.sgi.backend.application.port.out.EmpresaRepository;
 import ec.sgi.backend.application.port.out.FirmaElectronicaRepository;
 import ec.sgi.backend.domain.model.Empresa;
@@ -22,6 +24,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -30,21 +33,25 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional
 public class EmpresaService implements CrearEmpresaUseCase, ListarEmpresasUseCase,
-    SubirFirmaElectronicaUseCase, ActualizarEmpresaUseCase {
+    SubirFirmaElectronicaUseCase, ActualizarEmpresaUseCase, SubirLogoEmpresaUseCase {
   private static final String DEFAULT_TIPO_CONTENIDO = "application/x-pkcs12";
+  private static final Set<String> LOGO_TIPOS_CONTENIDO = Set.of("image/png", "image/jpeg", "image/jpg");
 
   private final EmpresaRepository empresaRepository;
   private final FirmaElectronicaRepository firmaElectronicaRepository;
   private final Path storageDir;
+  private final Path logoStorageDir;
 
   public EmpresaService(
       EmpresaRepository empresaRepository,
       FirmaElectronicaRepository firmaElectronicaRepository,
-      @Value("${app.signature.storageDir:storage/firmas}") String storageDir
+      @Value("${app.signature.storageDir:storage/firmas}") String storageDir,
+      @Value("${app.empresa.logo.storageDir:storage/logos}") String logoStorageDir
   ) {
     this.empresaRepository = empresaRepository;
     this.firmaElectronicaRepository = firmaElectronicaRepository;
     this.storageDir = Path.of(storageDir);
+    this.logoStorageDir = Path.of(logoStorageDir);
   }
 
   @Override
@@ -60,7 +67,10 @@ public class EmpresaService implements CrearEmpresaUseCase, ListarEmpresasUseCas
         command.dirMatriz(),
         command.estab(),
         command.ptoEmi(),
-        command.secuencial().trim()
+        command.secuencial().trim(),
+        null,
+        command.obligadoContabilidad(),
+        command.regimenRimpe()
     );
     Empresa guardada = empresaRepository.save(empresa);
     return new EmpresaCreateResult(guardada.id());
@@ -89,7 +99,10 @@ public class EmpresaService implements CrearEmpresaUseCase, ListarEmpresasUseCas
         command.dirMatriz(),
         command.estab(),
         command.ptoEmi(),
-        command.secuencial().trim()
+        command.secuencial().trim(),
+        existente.logoRuta(),
+        command.obligadoContabilidad(),
+        command.regimenRimpe()
     );
     Empresa guardada = empresaRepository.save(actualizada);
     return toResult(guardada);
@@ -121,6 +134,18 @@ public class EmpresaService implements CrearEmpresaUseCase, ListarEmpresasUseCas
     return new FirmaElectronicaResult(guardada.id(), guardada.nombreArchivo(), guardada.tipoContenido());
   }
 
+  @Override
+  public EmpresaResult subir(SubirLogoEmpresaCommand command) {
+    Empresa empresa = empresaRepository.findById(command.empresaId())
+        .orElseThrow(() -> new ResourceNotFoundException("Empresa no encontrada"));
+    validarLogo(command);
+
+    Path rutaArchivo = guardarLogo(empresa.id(), command, empresa.logoRuta());
+    Empresa actualizada = empresa.withLogoRuta(rutaArchivo.toString());
+    Empresa guardada = empresaRepository.save(actualizada);
+    return toResult(guardada);
+  }
+
   private EmpresaResult toResult(Empresa empresa) {
     return new EmpresaResult(
         empresa.id(),
@@ -132,7 +157,10 @@ public class EmpresaService implements CrearEmpresaUseCase, ListarEmpresasUseCas
         empresa.dirMatriz(),
         empresa.estab(),
         empresa.ptoEmi(),
-        empresa.secuencial()
+        empresa.secuencial(),
+        empresa.logoRuta(),
+        empresa.obligadoContabilidad(),
+        empresa.regimenRimpe()
     );
   }
 
@@ -151,6 +179,53 @@ public class EmpresaService implements CrearEmpresaUseCase, ListarEmpresasUseCas
     if (!lower.endsWith(".p12") && !lower.endsWith(".pfx")) {
       throw new BusinessRuleException("La firma debe ser un archivo .p12 o .pfx");
     }
+  }
+
+  private void validarLogo(SubirLogoEmpresaCommand command) {
+    if (command.contenido().length == 0) {
+      throw new BusinessRuleException("Archivo de logo vacio");
+    }
+    String nombreArchivo = command.nombreArchivo();
+    if (nombreArchivo.isBlank()) {
+      throw new BusinessRuleException("Nombre de archivo requerido");
+    }
+    String lower = nombreArchivo.toLowerCase(Locale.ROOT);
+    boolean extensionValida = lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".jpeg");
+    if (!extensionValida) {
+      throw new BusinessRuleException("El logo debe ser PNG o JPG");
+    }
+    String tipoContenido = command.tipoContenido();
+    boolean tipoValido = tipoContenido == null || tipoContenido.isBlank()
+        || "application/octet-stream".equalsIgnoreCase(tipoContenido)
+        || LOGO_TIPOS_CONTENIDO.contains(tipoContenido);
+    if (!tipoValido) {
+      throw new BusinessRuleException("Tipo de contenido no soportado para logo");
+    }
+    if (!isSupportedImage(command.contenido())) {
+      throw new BusinessRuleException("El logo no es una imagen valida");
+    }
+  }
+
+  private boolean isSupportedImage(byte[] contenido) {
+    if (contenido.length >= 8) {
+      boolean isPng = (contenido[0] & 0xFF) == 0x89
+          && (contenido[1] & 0xFF) == 0x50
+          && (contenido[2] & 0xFF) == 0x4E
+          && (contenido[3] & 0xFF) == 0x47
+          && (contenido[4] & 0xFF) == 0x0D
+          && (contenido[5] & 0xFF) == 0x0A
+          && (contenido[6] & 0xFF) == 0x1A
+          && (contenido[7] & 0xFF) == 0x0A;
+      if (isPng) {
+        return true;
+      }
+    }
+    if (contenido.length >= 3) {
+      return (contenido[0] & 0xFF) == 0xFF
+          && (contenido[1] & 0xFF) == 0xD8
+          && (contenido[2] & 0xFF) == 0xFF;
+    }
+    return false;
   }
 
   private Path guardarFirma(
@@ -177,6 +252,29 @@ public class EmpresaService implements CrearEmpresaUseCase, ListarEmpresasUseCas
     }
 
     existente.map(FirmaElectronica::rutaArchivo).ifPresent(this::eliminarArchivo);
+    return destino;
+  }
+
+  private Path guardarLogo(Long empresaId, SubirLogoEmpresaCommand command, String rutaExistente) {
+    String nombreArchivo = command.nombreArchivo();
+    String lower = nombreArchivo.toLowerCase(Locale.ROOT);
+    String extension = lower.endsWith(".png") ? ".png" : ".jpg";
+
+    Path empresaDir = logoStorageDir.resolve(empresaId.toString()).toAbsolutePath().normalize();
+    try {
+      Files.createDirectories(empresaDir);
+    } catch (Exception ex) {
+      throw new BusinessRuleException("No se pudo crear el directorio de logos");
+    }
+
+    Path destino = empresaDir.resolve("logo-" + UUID.randomUUID() + extension);
+    try {
+      Files.write(destino, command.contenido(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+    } catch (Exception ex) {
+      throw new BusinessRuleException("No se pudo guardar el logo en disco");
+    }
+
+    eliminarArchivo(rutaExistente);
     return destino;
   }
 

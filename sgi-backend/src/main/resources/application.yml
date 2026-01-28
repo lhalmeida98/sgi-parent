@@ -64,3 +64,6 @@ app:
     jwt:
       secret: "Odhdz2Lrt9vEtM4r8hf4x68tAaqihJJzgLz91OFOddXKgKdOB5KlxtYn3XO__LsJ"
       expiration-seconds: 86400
+  empresa:
+    logo:
+      storageDir: storage/logos

@@ -22,6 +22,9 @@ public class EmpresaEntity {
   private String estab;
   private String ptoEmi;
   private String secuencial;
+  private String logoRuta;
+  private boolean obligadoContabilidad;
+  private boolean regimenRimpe;
 
   public EmpresaEntity() {
   }
@@ -104,5 +107,29 @@ public class EmpresaEntity {
 
   public void setSecuencial(String secuencial) {
     this.secuencial = secuencial;
+  }
+
+  public String getLogoRuta() {
+    return logoRuta;
+  }
+
+  public void setLogoRuta(String logoRuta) {
+    this.logoRuta = logoRuta;
+  }
+
+  public boolean isObligadoContabilidad() {
+    return obligadoContabilidad;
+  }
+
+  public void setObligadoContabilidad(boolean obligadoContabilidad) {
+    this.obligadoContabilidad = obligadoContabilidad;
+  }
+
+  public boolean isRegimenRimpe() {
+    return regimenRimpe;
+  }
+
+  public void setRegimenRimpe(boolean regimenRimpe) {
+    this.regimenRimpe = regimenRimpe;
   }
 }

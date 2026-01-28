@@ -13,6 +13,8 @@ import ec.sgi.backend.application.port.in.CrearEmpresaUseCase;
 import ec.sgi.backend.application.port.in.ListarEmpresasUseCase;
 import ec.sgi.backend.application.port.in.SubirFirmaElectronicaCommand;
 import ec.sgi.backend.application.port.in.SubirFirmaElectronicaUseCase;
+import ec.sgi.backend.application.port.in.SubirLogoEmpresaCommand;
+import ec.sgi.backend.application.port.in.SubirLogoEmpresaUseCase;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -35,17 +37,20 @@ public class EmpresaController {
   private final ListarEmpresasUseCase listarEmpresasUseCase;
   private final SubirFirmaElectronicaUseCase subirFirmaElectronicaUseCase;
   private final ActualizarEmpresaUseCase actualizarEmpresaUseCase;
+  private final SubirLogoEmpresaUseCase subirLogoEmpresaUseCase;
 
   public EmpresaController(
       CrearEmpresaUseCase crearEmpresaUseCase,
       ListarEmpresasUseCase listarEmpresasUseCase,
       SubirFirmaElectronicaUseCase subirFirmaElectronicaUseCase,
-      ActualizarEmpresaUseCase actualizarEmpresaUseCase
+      ActualizarEmpresaUseCase actualizarEmpresaUseCase,
+      SubirLogoEmpresaUseCase subirLogoEmpresaUseCase
   ) {
     this.crearEmpresaUseCase = crearEmpresaUseCase;
     this.listarEmpresasUseCase = listarEmpresasUseCase;
     this.subirFirmaElectronicaUseCase = subirFirmaElectronicaUseCase;
     this.actualizarEmpresaUseCase = actualizarEmpresaUseCase;
+    this.subirLogoEmpresaUseCase = subirLogoEmpresaUseCase;
   }
 
   @PostMapping
@@ -59,7 +64,9 @@ public class EmpresaController {
         request.dirMatriz(),
         request.estab(),
         request.ptoEmi(),
-        request.secuencial()
+        request.secuencial(),
+        Boolean.TRUE.equals(request.obligadoContabilidad()),
+        Boolean.TRUE.equals(request.regimenRimpe())
     ));
     return ResponseEntity.status(HttpStatus.CREATED).body(result);
   }
@@ -82,7 +89,9 @@ public class EmpresaController {
         request.dirMatriz(),
         request.estab(),
         request.ptoEmi(),
-        request.secuencial()
+        request.secuencial(),
+        Boolean.TRUE.equals(request.obligadoContabilidad()),
+        Boolean.TRUE.equals(request.regimenRimpe())
     ));
     return ResponseEntity.ok(result);
   }
@@ -109,6 +118,30 @@ public class EmpresaController {
         archivo.getContentType(),
         contenido,
         clave
+    ));
+    return ResponseEntity.status(HttpStatus.CREATED).body(result);
+  }
+
+  @PostMapping(path = "/{empresaId}/logo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  public ResponseEntity<EmpresaResult> subirLogo(
+      @PathVariable Long empresaId,
+      @RequestParam("archivo") MultipartFile archivo
+  ) {
+    String nombreArchivo = archivo.getOriginalFilename();
+    if (nombreArchivo == null) {
+      nombreArchivo = "";
+    }
+    byte[] contenido;
+    try {
+      contenido = archivo.getBytes();
+    } catch (Exception ex) {
+      throw new BusinessRuleException("No se pudo leer el archivo de logo");
+    }
+    EmpresaResult result = subirLogoEmpresaUseCase.subir(new SubirLogoEmpresaCommand(
+        empresaId,
+        nombreArchivo,
+        archivo.getContentType(),
+        contenido
     ));
     return ResponseEntity.status(HttpStatus.CREATED).body(result);
   }

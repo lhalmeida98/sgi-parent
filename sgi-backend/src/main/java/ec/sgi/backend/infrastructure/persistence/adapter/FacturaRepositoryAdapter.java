@@ -40,4 +40,36 @@ public class FacturaRepositoryAdapter implements FacturaRepository {
         .map(mapper::toDomain)
         .toList();
   }
+
+  @Override
+  public List<Factura> findByEmpresaId(Long empresaId) {
+    return facturaJpaRepository.findByEmpresaId(empresaId).stream()
+        .map(mapper::toDomain)
+        .toList();
+  }
+
+  @Override
+  public org.springframework.data.domain.Page<Factura> findByEmpresaIdAndFechaEmisionBetween(
+      Long empresaId,
+      java.time.LocalDate fechaDesde,
+      java.time.LocalDate fechaHasta,
+      org.springframework.data.domain.Pageable pageable) {
+    return facturaJpaRepository.findByEmpresaIdAndFechaEmisionBetween(empresaId, fechaDesde, fechaHasta, pageable)
+        .map(mapper::toDomain);
+  }
+
+  @Override
+  public Optional<Factura> findByEmpresaIdAndInfoEstabAndInfoPtoEmiAndInfoSecuencial(
+      Long empresaId,
+      String infoEstab,
+      String infoPtoEmi,
+      String infoSecuencial) {
+    return facturaJpaRepository.findByEmpresaIdAndInfoEstabAndInfoPtoEmiAndInfoSecuencial(
+        empresaId, infoEstab, infoPtoEmi, infoSecuencial).map(mapper::toDomain);
+  }
+
+  @Override
+  public Optional<Factura> findByEmpresaIdAndInfoSecuencial(Long empresaId, String infoSecuencial) {
+    return facturaJpaRepository.findByEmpresaIdAndInfoSecuencial(empresaId, infoSecuencial).map(mapper::toDomain);
+  }
 }

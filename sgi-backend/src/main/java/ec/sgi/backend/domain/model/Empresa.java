@@ -12,7 +12,10 @@ public record Empresa(
     String dirMatriz,
     String estab,
     String ptoEmi,
-    String secuencial
+    String secuencial,
+    String logoRuta,
+    boolean obligadoContabilidad,
+    boolean regimenRimpe
 ) {
   public Empresa {
     Objects.requireNonNull(ambiente, "ambiente");
@@ -37,7 +40,28 @@ public record Empresa(
         dirMatriz,
         estab,
         ptoEmi,
-        nuevoSecuencial
+        nuevoSecuencial,
+        logoRuta,
+        obligadoContabilidad,
+        regimenRimpe
+    );
+  }
+
+  public Empresa withLogoRuta(String nuevaRuta) {
+    return new Empresa(
+        id,
+        ambiente,
+        tipoEmision,
+        razonSocial,
+        nombreComercial,
+        ruc,
+        dirMatriz,
+        estab,
+        ptoEmi,
+        secuencial,
+        nuevaRuta,
+        obligadoContabilidad,
+        regimenRimpe
     );
   }
 }

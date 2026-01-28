@@ -3,6 +3,8 @@ package ec.sgi.backend.application.service;
 import ec.sgi.backend.application.dto.FacturaCreateResult;
 import ec.sgi.backend.application.dto.FacturaEstadoResult;
 import ec.sgi.backend.application.dto.FacturaProcesoResult;
+import ec.sgi.backend.application.dto.FacturaResumenPageResult;
+import ec.sgi.backend.application.dto.FacturaResumenResult;
 import ec.sgi.backend.application.dto.FacturaTotalesDto;
 import ec.sgi.backend.application.dto.SriConsultaEstadoRequest;
 import ec.sgi.backend.application.dto.SriConsultaEstadoResult;
@@ -12,6 +14,7 @@ import ec.sgi.backend.application.dto.SriEnvioStatus;
 import ec.sgi.backend.application.dto.SriEstadoDto;
 import ec.sgi.backend.application.dto.SriInfoTributariaDto;
 import ec.sgi.backend.application.exception.BusinessRuleException;
+import ec.sgi.backend.application.exception.ForbiddenException;
 import ec.sgi.backend.application.exception.ResourceNotFoundException;
 import ec.sgi.backend.application.exception.SriCoreException;
 import ec.sgi.backend.application.port.in.ConsultarEstadoFacturaCommand;
@@ -20,6 +23,8 @@ import ec.sgi.backend.application.port.in.ConsultarFacturaEnProcesoUseCase;
 import ec.sgi.backend.application.port.in.CrearFacturaCommand;
 import ec.sgi.backend.application.port.in.CrearFacturaUseCase;
 import ec.sgi.backend.application.port.in.ListarFacturasEnProcesoUseCase;
+import ec.sgi.backend.application.port.in.ListarFacturasUseCase;
+import ec.sgi.backend.application.port.in.ObtenerFacturaXmlUseCase;
 import ec.sgi.backend.application.port.in.PagoFacturaCommand;
 import ec.sgi.backend.application.port.in.ReenviarFacturasEnProcesoUseCase;
 import ec.sgi.backend.application.port.out.ClienteRepository;
@@ -51,12 +56,18 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -64,7 +75,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFacturaUseCase,
     ListarFacturasEnProcesoUseCase, ReenviarFacturasEnProcesoUseCase,
-    ConsultarFacturaEnProcesoUseCase {
+    ConsultarFacturaEnProcesoUseCase, ListarFacturasUseCase, ObtenerFacturaXmlUseCase {
   private static final BigDecimal PROPINA_CERO = BigDecimal.ZERO.setScale(2);
   private static final Logger log = LoggerFactory.getLogger(FacturaService.class);
 
@@ -231,8 +242,7 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
 
   @Override
   public FacturaEstadoResult consultar(ConsultarEstadoFacturaCommand command) {
-    Factura factura = facturaRepository.findById(command.facturaId())
-        .orElseThrow(() -> new ResourceNotFoundException("Factura no encontrada"));
+    Factura factura = obtenerFacturaPorNumero(command.empresaId(), command.numeroFactura());
     if (factura.claveAcceso() == null || factura.claveAcceso().isBlank()) {
       throw new BusinessRuleException("Factura sin clave de acceso registrada");
     }
@@ -260,6 +270,47 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
     return facturaRepository.findByEstadoAndEmpresaId(FacturaEstado.EN_PROCESO, empresaId).stream()
         .map(this::toProcesoResult)
         .toList();
+  }
+
+  @Override
+  public FacturaResumenPageResult listarPorEmpresa(Long empresaId, LocalDate fechaDesde, LocalDate fechaHasta,
+      int page, int size) {
+    LocalDate desde = fechaDesde == null ? LocalDate.now() : fechaDesde;
+    LocalDate hasta = fechaHasta == null ? desde : fechaHasta;
+    if (hasta.isBefore(desde)) {
+      throw new BusinessRuleException("fechaHasta debe ser mayor o igual a fechaDesde");
+    }
+    PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "fechaEmision").and(Sort.by("id")));
+    Page<Factura> facturas = facturaRepository.findByEmpresaIdAndFechaEmisionBetween(empresaId, desde, hasta, pageable);
+
+    List<Cliente> clientes = clienteRepository.findByEmpresaId(empresaId);
+    Map<Long, Cliente> clientesPorId = clientes.stream()
+        .collect(Collectors.toMap(Cliente::id, cliente -> cliente, (a, b) -> a));
+    List<FacturaResumenResult> items = facturas.getContent().stream()
+        .map(factura -> toResumen(factura, clientesPorId.get(factura.clienteId())))
+        .toList();
+
+    return new FacturaResumenPageResult(
+        items,
+        facturas.getNumber(),
+        facturas.getSize(),
+        facturas.getTotalElements(),
+        facturas.getTotalPages()
+    );
+  }
+
+  @Override
+  public String obtenerXml(Long facturaId, Long empresaId) {
+    Factura factura = facturaRepository.findById(facturaId)
+        .orElseThrow(() -> new ResourceNotFoundException("Factura no encontrada"));
+    if (!empresaId.equals(factura.empresaId())) {
+      throw new ForbiddenException("Factura no pertenece a la empresa");
+    }
+    String xml = factura.xmlAutorizado();
+    if (xml == null || xml.isBlank()) {
+      throw new ResourceNotFoundException("XML no disponible");
+    }
+    return xml;
   }
 
   @Override
@@ -375,6 +426,78 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
         factura.coreComprobanteId(),
         sriDto
     );
+  }
+
+  private FacturaResumenResult toResumen(Factura factura, Cliente cliente) {
+    String numeroFactura = buildNumeroFactura(factura.infoTributaria());
+    return new FacturaResumenResult(
+        factura.id(),
+        factura.empresaId(),
+        factura.clienteId(),
+        cliente == null ? "" : cliente.razonSocial(),
+        factura.fechaEmision(),
+        numeroFactura,
+        factura.estado().name(),
+        factura.claveAcceso(),
+        factura.numeroAutorizacion(),
+        factura.totales().totalSinImpuestos(),
+        factura.totales().totalDescuento(),
+        factura.totales().totalImpuestos(),
+        factura.totales().importeTotal()
+    );
+  }
+
+  private String buildNumeroFactura(InfoTributariaData info) {
+    if (info == null) {
+      return "";
+    }
+    String estab = info.estab() == null ? "" : info.estab();
+    String ptoEmi = info.ptoEmi() == null ? "" : info.ptoEmi();
+    String secuencial = info.secuencial() == null ? "" : info.secuencial();
+    return estab + "-" + ptoEmi + "-" + secuencial;
+  }
+
+  private Factura obtenerFacturaPorNumero(Long empresaId, String numeroFactura) {
+    String valor = numeroFactura == null ? "" : numeroFactura.trim();
+    if (valor.isEmpty()) {
+      throw new BusinessRuleException("Numero de factura requerido");
+    }
+    if (valor.contains("-")) {
+      String[] partes = valor.split("-");
+      if (partes.length != 3) {
+        throw new BusinessRuleException("Numero de factura invalido");
+      }
+      String estab = partes[0].trim();
+      String ptoEmi = partes[1].trim();
+      String secuencial = padSecuencial(empresaId, partes[2].trim());
+      return facturaRepository.findByEmpresaIdAndInfoEstabAndInfoPtoEmiAndInfoSecuencial(
+          empresaId, estab, ptoEmi, secuencial)
+          .orElseThrow(() -> new ResourceNotFoundException("Factura no encontrada"));
+    }
+    String secuencial = padSecuencial(empresaId, valor);
+    return facturaRepository.findByEmpresaIdAndInfoSecuencial(empresaId, secuencial)
+        .orElseThrow(() -> new ResourceNotFoundException("Factura no encontrada"));
+  }
+
+  private String padSecuencial(Long empresaId, String secuencialInput) {
+    String trimmed = secuencialInput == null ? "" : secuencialInput.trim();
+    if (trimmed.isEmpty()) {
+      return trimmed;
+    }
+    boolean numeric = trimmed.chars().allMatch(Character::isDigit);
+    if (!numeric) {
+      return trimmed;
+    }
+    int targetLength = empresaRepository.findById(empresaId)
+        .map(Empresa::secuencial)
+        .map(String::trim)
+        .filter(value -> !value.isEmpty())
+        .map(String::length)
+        .orElse(trimmed.length());
+    if (trimmed.length() >= targetLength) {
+      return trimmed;
+    }
+    return "0".repeat(targetLength - trimmed.length()) + trimmed;
   }
 
   private FacturaProcesoResult toProcesoResult(Factura factura) {

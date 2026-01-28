@@ -10,7 +10,9 @@ public record ActualizarEmpresaCommand(
     String dirMatriz,
     String estab,
     String ptoEmi,
-    String secuencial
+    String secuencial,
+    boolean obligadoContabilidad,
+    boolean regimenRimpe
 ) {
   public ActualizarEmpresaCommand {
     Objects.requireNonNull(ambiente, "ambiente");

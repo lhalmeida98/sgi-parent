@@ -10,6 +10,8 @@ public record EmpresaUpdateRequest(
     @NotBlank String dirMatriz,
     @NotBlank String estab,
     @NotBlank String ptoEmi,
-    @NotBlank String secuencial
+    @NotBlank String secuencial,
+    Boolean obligadoContabilidad,
+    Boolean regimenRimpe
 ) {
 }

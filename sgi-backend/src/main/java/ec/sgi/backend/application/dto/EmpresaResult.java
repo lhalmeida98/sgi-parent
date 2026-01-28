@@ -11,6 +11,9 @@ public record EmpresaResult(
     String dirMatriz,
     String estab,
     String ptoEmi,
-    String secuencial
+    String secuencial,
+    String logoRuta,
+    boolean obligadoContabilidad,
+    boolean regimenRimpe
 ) {
 }
