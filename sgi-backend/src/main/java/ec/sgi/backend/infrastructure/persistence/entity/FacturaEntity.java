@@ -42,6 +42,8 @@ public class FacturaEntity {
   private String sriMensaje;
   private String numeroAutorizacion;
   @Lob
+  private String xmlFirmado;
+  @Lob
   private String xmlAutorizado;
   private Integer intentosConsulta;
   private LocalDateTime ultimoIntentoConsulta;
@@ -207,6 +209,14 @@ public class FacturaEntity {
 
   public void setNumeroAutorizacion(String numeroAutorizacion) {
     this.numeroAutorizacion = numeroAutorizacion;
+  }
+
+  public String getXmlFirmado() {
+    return xmlFirmado;
+  }
+
+  public void setXmlFirmado(String xmlFirmado) {
+    this.xmlFirmado = xmlFirmado;
   }
 
   public String getXmlAutorizado() {

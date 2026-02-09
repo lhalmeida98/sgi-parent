@@ -1,6 +1,7 @@
 package ec.sgi.backend.interfaces;
 
 import ec.sgi.backend.application.exception.BusinessRuleException;
+import ec.sgi.backend.application.exception.EmailSendException;
 import ec.sgi.backend.application.exception.ForbiddenException;
 import ec.sgi.backend.application.exception.ResourceNotFoundException;
 import ec.sgi.backend.application.exception.SriCoreException;
@@ -33,6 +34,11 @@ public class ApiExceptionHandler {
   @ExceptionHandler(ForbiddenException.class)
   public ResponseEntity<ApiError> handleForbidden(ForbiddenException ex, HttpServletRequest request) {
     return buildError(HttpStatus.FORBIDDEN, ex.getMessage(), request.getRequestURI());
+  }
+
+  @ExceptionHandler(EmailSendException.class)
+  public ResponseEntity<ApiError> handleEmail(EmailSendException ex, HttpServletRequest request) {
+    return buildError(HttpStatus.BAD_GATEWAY, ex.getMessage(), request.getRequestURI());
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)

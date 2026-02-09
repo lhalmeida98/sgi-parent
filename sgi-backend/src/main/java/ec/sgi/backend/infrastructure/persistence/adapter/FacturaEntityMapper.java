@@ -33,6 +33,7 @@ public class FacturaEntityMapper {
     entity.setClaveAcceso(factura.claveAcceso());
     entity.setCoreComprobanteId(factura.coreComprobanteId());
     entity.setNumeroAutorizacion(factura.numeroAutorizacion());
+    entity.setXmlFirmado(factura.xmlFirmado());
     entity.setXmlAutorizado(factura.xmlAutorizado());
     entity.setIntentosConsulta(factura.intentosConsulta());
     entity.setUltimoIntentoConsulta(factura.ultimoIntentoConsulta());
@@ -174,6 +175,7 @@ public class FacturaEntityMapper {
         entity.getCoreComprobanteId(),
         sriEstado,
         entity.getNumeroAutorizacion(),
+        entity.getXmlFirmado(),
         entity.getXmlAutorizado(),
         intentosConsulta,
         entity.getUltimoIntentoConsulta()

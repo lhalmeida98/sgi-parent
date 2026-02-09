@@ -4,6 +4,7 @@ public record SriConsultaEstadoResult(
     String estadoConsulta,
     String estadoAutorizacion,
     String mensaje,
-    String claveAcceso
+    String claveAcceso,
+    String xmlAutorizado
 ) {
 }

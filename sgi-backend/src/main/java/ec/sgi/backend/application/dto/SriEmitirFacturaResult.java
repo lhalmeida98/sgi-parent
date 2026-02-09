@@ -5,6 +5,7 @@ public record SriEmitirFacturaResult(
     String claveAcceso,
     SriEnvioStatus estadoSri,
     String mensajeSri,
-    String numeroAutorizacion
+    String numeroAutorizacion,
+    String xmlFirmado
 ) {
 }

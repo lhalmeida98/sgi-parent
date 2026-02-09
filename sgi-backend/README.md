@@ -45,6 +45,10 @@ src/main/java/ec/sgi/backend
 - `GET /api/facturas/{facturaId}/estado`
   - Consulta estado en SRI via core y actualiza el estado local.
 
+## Swagger / OpenAPI
+- UI: `GET /swagger-ui/index.html`
+- JSON: `GET /v3/api-docs`
+
 ### Ejemplo request: crear factura
 ```json
 {
@@ -87,3 +91,58 @@ src/main/java/ec/sgi/backend
 
 ## Configuracion base
 En `src/main/resources/application.yml` ajustar `spring.datasource.*` con credenciales reales.
+
+## Correo (Resend)
+Variables de entorno requeridas para enviar facturas por correo:
+- `RESEND_API_KEY`
+- `MAIL_FROM_EMAIL` (por defecto `onboarding@resend.dev`)
+- `MAIL_FROM_NAME` (opcional)
+
+El arranque valida que exista `RESEND_API_KEY` (fail-fast). Si `MAIL_FROM_NAME` no existe,
+se enviara sin nombre visible.
+
+El envio de facturas adjunta ambos archivos:
+- `factura.pdf`
+- `factura.xml`
+
+Si usas el remitente `@resend.dev`, Resend limita los envios a tu email verificado (modo prueba).
+
+### Envio automatico al autorizar
+Por defecto el sistema envia la factura automaticamente cuando pasa a estado `AUTORIZADA`.
+Puedes desactivar con:
+- `app.facturas.email.auto-send-authorized=false`
+
+Para consultar automaticamente el estado con SRI, el scheduler revisa facturas en proceso cada:
+- `app.facturas.scheduler.fixed-delay-ms` (por defecto 15000 ms)
+
+Al crear una factura, se hace una consulta inmediata al SRI despues de un delay:
+- `app.facturas.sri.consulta-inmediata.enabled=true`
+- `app.facturas.sri.consulta-inmediata.delay-ms=10000`
+
+### XML firmado
+Se guarda el XML firmado (por defecto comprimido con gzip + base64) en `facturas.xml_firmado`.
+Configurable con:
+- `app.facturas.xml-firmado.store=true`
+- `app.facturas.xml-firmado.compress=true`
+
+Al autorizar, el XML firmado pasa a `xml_autorizado` (tambien comprimido) y se limpia `xml_firmado`.
+Configurable con:
+- `app.facturas.xml-autorizado.compress=true`
+
+### Reenvio puntual
+Endpoint para consultar el estado de una factura especifica en proceso:
+- `POST /api/facturas/{facturaId}/reenviar`
+
+### Health mail
+Endpoint publico para verificar la configuracion:
+- `GET /api/email/config`
+Respuesta esperada:
+```json
+{
+  "status": "ok",
+  "provider": "resend",
+  "fromEmail": "onboarding@resend.dev",
+  "fromName": "",
+  "restrictedToAccountEmail": true
+}
+```

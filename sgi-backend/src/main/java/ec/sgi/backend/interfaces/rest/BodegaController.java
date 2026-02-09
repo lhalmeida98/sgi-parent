@@ -9,6 +9,11 @@ import ec.sgi.backend.application.port.in.ListarBodegasUseCase;
 import ec.sgi.backend.security.CurrentUserService;
 import ec.sgi.backend.security.PermisoService;
 import ec.sgi.backend.security.Permisos;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -21,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/bodegas")
+@Tag(name = "Bodegas", description = "Gestion de bodegas.")
 public class BodegaController {
   private final CrearBodegaUseCase crearBodegaUseCase;
   private final ListarBodegasUseCase listarBodegasUseCase;
@@ -40,6 +46,14 @@ public class BodegaController {
   }
 
   @PostMapping
+  @Operation(summary = "Crear bodega", description = "Crea una bodega para la empresa actual.")
+  @SecurityRequirement(name = "bearerAuth")
+  @ApiResponses({
+      @ApiResponse(responseCode = "201", description = "Bodega creada"),
+      @ApiResponse(responseCode = "400", description = "Validacion invalida"),
+      @ApiResponse(responseCode = "401", description = "No autorizado"),
+      @ApiResponse(responseCode = "403", description = "Sin permisos")
+  })
   public ResponseEntity<BodegaCreateResult> crear(@Valid @RequestBody BodegaCreateRequest request) {
     permisoService.requirePermiso(Permisos.BODEGA_GESTION);
     Long empresaId = currentUserService.getEmpresaId();
@@ -54,6 +68,13 @@ public class BodegaController {
   }
 
   @GetMapping
+  @Operation(summary = "Listar bodegas", description = "Lista bodegas de la empresa actual.")
+  @SecurityRequirement(name = "bearerAuth")
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Listado de bodegas"),
+      @ApiResponse(responseCode = "401", description = "No autorizado"),
+      @ApiResponse(responseCode = "403", description = "Sin permisos")
+  })
   public ResponseEntity<List<BodegaResult>> listar() {
     permisoService.requirePermiso(Permisos.BODEGA_GESTION);
     return ResponseEntity.ok(listarBodegasUseCase.listar(currentUserService.getEmpresaId()));

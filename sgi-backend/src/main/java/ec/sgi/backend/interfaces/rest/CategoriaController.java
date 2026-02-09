@@ -12,6 +12,12 @@ import ec.sgi.backend.application.port.in.ListarCategoriasUseCase;
 import ec.sgi.backend.security.CurrentUserService;
 import ec.sgi.backend.security.PermisoService;
 import ec.sgi.backend.security.Permisos;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -26,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/categorias")
+@Tag(name = "Categorias", description = "Gestion de categorias de productos.")
 public class CategoriaController {
   private final CrearCategoriaUseCase crearCategoriaUseCase;
   private final ListarCategoriasUseCase listarCategoriasUseCase;
@@ -48,6 +55,14 @@ public class CategoriaController {
   }
 
   @PostMapping
+  @Operation(summary = "Crear categoria", description = "Crea una categoria para la empresa actual.")
+  @SecurityRequirement(name = "bearerAuth")
+  @ApiResponses({
+      @ApiResponse(responseCode = "201", description = "Categoria creada"),
+      @ApiResponse(responseCode = "400", description = "Validacion invalida"),
+      @ApiResponse(responseCode = "401", description = "No autorizado"),
+      @ApiResponse(responseCode = "403", description = "Sin permisos")
+  })
   public ResponseEntity<CategoriaCreateResult> crear(@Valid @RequestBody CategoriaCreateRequest request) {
     permisoService.requirePermiso(Permisos.CATEGORIA_GESTION);
     Long empresaId = currentUserService.getEmpresaId();
@@ -60,14 +75,30 @@ public class CategoriaController {
   }
 
   @GetMapping
+  @Operation(summary = "Listar categorias", description = "Lista categorias de la empresa actual.")
+  @SecurityRequirement(name = "bearerAuth")
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Listado de categorias"),
+      @ApiResponse(responseCode = "401", description = "No autorizado"),
+      @ApiResponse(responseCode = "403", description = "Sin permisos")
+  })
   public ResponseEntity<List<CategoriaResult>> listar() {
     permisoService.requirePermiso(Permisos.CATEGORIA_GESTION);
     return ResponseEntity.ok(listarCategoriasUseCase.listar(currentUserService.getEmpresaId()));
   }
 
   @PutMapping("/{categoriaId}")
+  @Operation(summary = "Actualizar categoria", description = "Actualiza una categoria existente.")
+  @SecurityRequirement(name = "bearerAuth")
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Categoria actualizada"),
+      @ApiResponse(responseCode = "400", description = "Validacion invalida"),
+      @ApiResponse(responseCode = "401", description = "No autorizado"),
+      @ApiResponse(responseCode = "403", description = "Sin permisos"),
+      @ApiResponse(responseCode = "404", description = "Categoria no encontrada")
+  })
   public ResponseEntity<CategoriaResult> actualizar(
-      @PathVariable Long categoriaId,
+      @Parameter(description = "ID de la categoria") @PathVariable Long categoriaId,
       @Valid @RequestBody CategoriaUpdateRequest request
   ) {
     permisoService.requirePermiso(Permisos.CATEGORIA_GESTION);

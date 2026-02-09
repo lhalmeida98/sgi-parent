@@ -49,7 +49,8 @@ public class DummySriClient implements SriClient, SriConsultaClient, SriLoteClie
         null,
         null,
         null,
-        "Simulacion SRI"
+        "Simulacion SRI",
+        autorizado ? "<factura>dummy</factura>" : null
     );
   }
 

@@ -18,6 +18,7 @@ import ec.sri.einvoice.domain.model.ComprobanteId;
 import ec.sri.einvoice.domain.service.ClaveAccesoGenerator;
 import java.time.LocalDate;
 import org.springframework.stereotype.Component;
+import ec.sgi.backend.infrastructure.sri.SriResponseSnapshot;
 
 @Component
 public class SriCoreAdapter implements SriCorePort {
@@ -51,7 +52,9 @@ public class SriCoreAdapter implements SriCorePort {
           request.codigoNumerico(),
           fechaEmision
       );
-      SriResponse response = responseContext.consume();
+      SriResponseSnapshot snapshot = responseContext.consumeSnapshot();
+      SriResponse response = snapshot == null ? null : snapshot.response();
+      String xmlFirmado = snapshot == null ? null : snapshot.xmlFirmado();
       SriEnvioStatus estadoSri = mapStatus(response);
       String mensajeSri = response == null ? null : response.mensaje();
       String numeroAutorizacion = response == null ? null : response.numeroAutorizacion();
@@ -60,7 +63,8 @@ public class SriCoreAdapter implements SriCorePort {
           claveAcceso.value(),
           estadoSri,
           mensajeSri,
-          numeroAutorizacion
+          numeroAutorizacion,
+          xmlFirmado
       );
     } catch (BusinessRuleException ex) {
       throw ex;
@@ -79,7 +83,8 @@ public class SriCoreAdapter implements SriCorePort {
           response.estadoConsulta(),
           response.estadoAutorizacion(),
           response.mensaje(),
-          response.claveAcceso()
+          response.claveAcceso(),
+          response.comprobanteXml()
       );
     } catch (BusinessRuleException ex) {
       throw ex;

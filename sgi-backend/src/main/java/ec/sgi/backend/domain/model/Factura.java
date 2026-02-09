@@ -22,6 +22,7 @@ public final class Factura {
   private final String coreComprobanteId;
   private final SriEstado sriEstado;
   private final String numeroAutorizacion;
+  private final String xmlFirmado;
   private final String xmlAutorizado;
   private final int intentosConsulta;
   private final LocalDateTime ultimoIntentoConsulta;
@@ -43,6 +44,7 @@ public final class Factura {
       String coreComprobanteId,
       SriEstado sriEstado,
       String numeroAutorizacion,
+      String xmlFirmado,
       String xmlAutorizado,
       int intentosConsulta,
       LocalDateTime ultimoIntentoConsulta
@@ -63,6 +65,7 @@ public final class Factura {
     this.coreComprobanteId = coreComprobanteId;
     this.sriEstado = sriEstado;
     this.numeroAutorizacion = numeroAutorizacion;
+    this.xmlFirmado = xmlFirmado;
     this.xmlAutorizado = xmlAutorizado;
     this.intentosConsulta = intentosConsulta;
     this.ultimoIntentoConsulta = ultimoIntentoConsulta;
@@ -132,6 +135,10 @@ public final class Factura {
     return numeroAutorizacion;
   }
 
+  public String xmlFirmado() {
+    return xmlFirmado;
+  }
+
   public String xmlAutorizado() {
     return xmlAutorizado;
   }
@@ -162,6 +169,7 @@ public final class Factura {
         coreComprobanteId,
         sriEstado,
         numeroAutorizacion,
+        xmlFirmado,
         xmlAutorizado,
         intentosConsulta,
         ultimoIntentoConsulta
@@ -186,6 +194,7 @@ public final class Factura {
         coreComprobanteId,
         sriEstado,
         numeroAutorizacion,
+        xmlFirmado,
         xmlAutorizado,
         intentosConsulta,
         ultimoIntentoConsulta
@@ -210,6 +219,7 @@ public final class Factura {
         nuevoId,
         sriEstado,
         numeroAutorizacion,
+        xmlFirmado,
         xmlAutorizado,
         intentosConsulta,
         ultimoIntentoConsulta
@@ -234,6 +244,7 @@ public final class Factura {
         coreComprobanteId,
         nuevoEstado,
         numeroAutorizacion,
+        xmlFirmado,
         xmlAutorizado,
         intentosConsulta,
         ultimoIntentoConsulta
@@ -258,6 +269,32 @@ public final class Factura {
         coreComprobanteId,
         sriEstado,
         nuevoNumero,
+        xmlFirmado,
+        xmlAutorizado,
+        intentosConsulta,
+        ultimoIntentoConsulta
+    );
+  }
+
+  public Factura withXmlFirmado(String nuevoXml) {
+    return new Factura(
+        id,
+        empresaId,
+        clienteId,
+        preordenId,
+        infoTributaria,
+        fechaEmision,
+        dirEstablecimiento,
+        moneda,
+        items,
+        totales,
+        pagos,
+        estado,
+        claveAcceso,
+        coreComprobanteId,
+        sriEstado,
+        numeroAutorizacion,
+        nuevoXml,
         xmlAutorizado,
         intentosConsulta,
         ultimoIntentoConsulta
@@ -282,6 +319,7 @@ public final class Factura {
         coreComprobanteId,
         sriEstado,
         numeroAutorizacion,
+        xmlFirmado,
         nuevoXml,
         intentosConsulta,
         ultimoIntentoConsulta
@@ -306,6 +344,7 @@ public final class Factura {
         coreComprobanteId,
         sriEstado,
         numeroAutorizacion,
+        xmlFirmado,
         xmlAutorizado,
         nuevosIntentos,
         nuevoUltimoIntento

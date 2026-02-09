@@ -15,6 +15,12 @@ import ec.sgi.backend.application.port.in.SubirFirmaElectronicaCommand;
 import ec.sgi.backend.application.port.in.SubirFirmaElectronicaUseCase;
 import ec.sgi.backend.application.port.in.SubirLogoEmpresaCommand;
 import ec.sgi.backend.application.port.in.SubirLogoEmpresaUseCase;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -32,6 +38,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/empresas")
+@Tag(name = "Empresas", description = "Gestion de empresas.")
 public class EmpresaController {
   private final CrearEmpresaUseCase crearEmpresaUseCase;
   private final ListarEmpresasUseCase listarEmpresasUseCase;
@@ -54,6 +61,14 @@ public class EmpresaController {
   }
 
   @PostMapping
+  @Operation(summary = "Crear empresa", description = "Crea una empresa.")
+  @SecurityRequirement(name = "bearerAuth")
+  @ApiResponses({
+      @ApiResponse(responseCode = "201", description = "Empresa creada"),
+      @ApiResponse(responseCode = "400", description = "Validacion invalida"),
+      @ApiResponse(responseCode = "401", description = "No autorizado"),
+      @ApiResponse(responseCode = "403", description = "Sin permisos")
+  })
   public ResponseEntity<EmpresaCreateResult> crear(@Valid @RequestBody EmpresaCreateRequest request) {
     EmpresaCreateResult result = crearEmpresaUseCase.crear(new CrearEmpresaCommand(
         request.ambiente(),
@@ -72,13 +87,29 @@ public class EmpresaController {
   }
 
   @GetMapping
+  @Operation(summary = "Listar empresas", description = "Lista empresas registradas.")
+  @SecurityRequirement(name = "bearerAuth")
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Listado de empresas"),
+      @ApiResponse(responseCode = "401", description = "No autorizado"),
+      @ApiResponse(responseCode = "403", description = "Sin permisos")
+  })
   public ResponseEntity<List<EmpresaResult>> listar() {
     return ResponseEntity.ok(listarEmpresasUseCase.listar());
   }
 
   @PutMapping("/{empresaId}")
+  @Operation(summary = "Actualizar empresa", description = "Actualiza datos de una empresa.")
+  @SecurityRequirement(name = "bearerAuth")
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Empresa actualizada"),
+      @ApiResponse(responseCode = "400", description = "Validacion invalida"),
+      @ApiResponse(responseCode = "401", description = "No autorizado"),
+      @ApiResponse(responseCode = "403", description = "Sin permisos"),
+      @ApiResponse(responseCode = "404", description = "Empresa no encontrada")
+  })
   public ResponseEntity<EmpresaResult> actualizar(
-      @PathVariable Long empresaId,
+      @Parameter(description = "ID de la empresa") @PathVariable Long empresaId,
       @Valid @RequestBody EmpresaUpdateRequest request
   ) {
     EmpresaResult result = actualizarEmpresaUseCase.actualizar(empresaId, new ActualizarEmpresaCommand(
@@ -97,10 +128,19 @@ public class EmpresaController {
   }
 
   @PostMapping(path = "/{empresaId}/firma", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @Operation(summary = "Subir firma electronica", description = "Sube el archivo P12/PFX de firma.")
+  @SecurityRequirement(name = "bearerAuth")
+  @ApiResponses({
+      @ApiResponse(responseCode = "201", description = "Firma subida"),
+      @ApiResponse(responseCode = "400", description = "Archivo invalido"),
+      @ApiResponse(responseCode = "401", description = "No autorizado"),
+      @ApiResponse(responseCode = "403", description = "Sin permisos"),
+      @ApiResponse(responseCode = "404", description = "Empresa no encontrada")
+  })
   public ResponseEntity<FirmaElectronicaResult> subirFirma(
-      @PathVariable Long empresaId,
-      @RequestParam("archivo") MultipartFile archivo,
-      @RequestParam("clave") String clave
+      @Parameter(description = "ID de la empresa") @PathVariable Long empresaId,
+      @Parameter(description = "Archivo P12/PFX") @RequestParam("archivo") MultipartFile archivo,
+      @Parameter(description = "Clave del archivo de firma") @RequestParam("clave") String clave
   ) {
     String nombreArchivo = archivo.getOriginalFilename();
     if (nombreArchivo == null) {
@@ -123,9 +163,18 @@ public class EmpresaController {
   }
 
   @PostMapping(path = "/{empresaId}/logo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @Operation(summary = "Subir logo", description = "Sube el logo de la empresa.")
+  @SecurityRequirement(name = "bearerAuth")
+  @ApiResponses({
+      @ApiResponse(responseCode = "201", description = "Logo subido"),
+      @ApiResponse(responseCode = "400", description = "Archivo invalido"),
+      @ApiResponse(responseCode = "401", description = "No autorizado"),
+      @ApiResponse(responseCode = "403", description = "Sin permisos"),
+      @ApiResponse(responseCode = "404", description = "Empresa no encontrada")
+  })
   public ResponseEntity<EmpresaResult> subirLogo(
-      @PathVariable Long empresaId,
-      @RequestParam("archivo") MultipartFile archivo
+      @Parameter(description = "ID de la empresa") @PathVariable Long empresaId,
+      @Parameter(description = "Archivo de imagen") @RequestParam("archivo") MultipartFile archivo
   ) {
     String nombreArchivo = archivo.getOriginalFilename();
     if (nombreArchivo == null) {

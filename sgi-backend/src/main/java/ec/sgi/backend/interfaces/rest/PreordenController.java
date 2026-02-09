@@ -10,6 +10,11 @@ import ec.sgi.backend.application.port.in.ListarPreordenesUseCase;
 import ec.sgi.backend.security.CurrentUserService;
 import ec.sgi.backend.security.PermisoService;
 import ec.sgi.backend.security.Permisos;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -22,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/preordenes")
+@Tag(name = "Preordenes", description = "Gestion de preordenes.")
 public class PreordenController {
   private final CrearPreordenUseCase crearPreordenUseCase;
   private final ListarPreordenesUseCase listarPreordenesUseCase;
@@ -41,6 +47,14 @@ public class PreordenController {
   }
 
   @PostMapping
+  @Operation(summary = "Crear preorden", description = "Crea una preorden para la empresa actual.")
+  @SecurityRequirement(name = "bearerAuth")
+  @ApiResponses({
+      @ApiResponse(responseCode = "201", description = "Preorden creada"),
+      @ApiResponse(responseCode = "400", description = "Validacion invalida"),
+      @ApiResponse(responseCode = "401", description = "No autorizado"),
+      @ApiResponse(responseCode = "403", description = "Sin permisos")
+  })
   public ResponseEntity<PreordenCreateResult> crear(@Valid @RequestBody PreordenCreateRequest request) {
     permisoService.requirePermiso(Permisos.PREORDEN_GESTION);
     Long empresaId = currentUserService.getEmpresaId();
@@ -59,6 +73,13 @@ public class PreordenController {
   }
 
   @GetMapping
+  @Operation(summary = "Listar preordenes", description = "Lista preordenes de la empresa actual.")
+  @SecurityRequirement(name = "bearerAuth")
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Listado de preordenes"),
+      @ApiResponse(responseCode = "401", description = "No autorizado"),
+      @ApiResponse(responseCode = "403", description = "Sin permisos")
+  })
   public ResponseEntity<List<PreordenResult>> listar() {
     permisoService.requirePermiso(Permisos.PREORDEN_GESTION);
     return ResponseEntity.ok(listarPreordenesUseCase.listar(currentUserService.getEmpresaId()));

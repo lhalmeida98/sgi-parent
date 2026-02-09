@@ -8,7 +8,8 @@ public record SriConsultaAutorizacionResponse(
     String rucEmisor,
     String tipoComprobante,
     String fechaAutorizacion,
-    String mensaje
+    String mensaje,
+    String comprobanteXml
 ) {
   public static SriConsultaAutorizacionResponse error(String mensaje) {
     return new SriConsultaAutorizacionResponse(
@@ -19,7 +20,8 @@ public record SriConsultaAutorizacionResponse(
         null,
         null,
         null,
-        mensaje
+        mensaje,
+        null
     );
   }
 }

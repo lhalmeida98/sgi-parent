@@ -9,6 +9,11 @@ import ec.sgi.backend.application.port.in.ListarInventarioUseCase;
 import ec.sgi.backend.security.CurrentUserService;
 import ec.sgi.backend.security.PermisoService;
 import ec.sgi.backend.security.Permisos;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -21,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/inventarios")
+@Tag(name = "Inventario", description = "Gestion de inventarios.")
 public class InventarioController {
   private final CrearInventarioUseCase crearInventarioUseCase;
   private final ListarInventarioUseCase listarInventarioUseCase;
@@ -40,6 +46,14 @@ public class InventarioController {
   }
 
   @PostMapping
+  @Operation(summary = "Crear inventario", description = "Crea registro de inventario para un producto.")
+  @SecurityRequirement(name = "bearerAuth")
+  @ApiResponses({
+      @ApiResponse(responseCode = "201", description = "Inventario creado"),
+      @ApiResponse(responseCode = "400", description = "Validacion invalida"),
+      @ApiResponse(responseCode = "401", description = "No autorizado"),
+      @ApiResponse(responseCode = "403", description = "Sin permisos")
+  })
   public ResponseEntity<InventarioCreateResult> crear(@Valid @RequestBody InventarioCreateRequest request) {
     permisoService.requirePermiso(Permisos.INVENTARIO_GESTION);
     Long empresaId = currentUserService.getEmpresaId();
@@ -56,6 +70,13 @@ public class InventarioController {
   }
 
   @GetMapping
+  @Operation(summary = "Listar inventario", description = "Lista inventario de la empresa actual.")
+  @SecurityRequirement(name = "bearerAuth")
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Listado de inventario"),
+      @ApiResponse(responseCode = "401", description = "No autorizado"),
+      @ApiResponse(responseCode = "403", description = "Sin permisos")
+  })
   public ResponseEntity<List<InventarioResult>> listar() {
     permisoService.requirePermiso(Permisos.INVENTARIO_GESTION);
     return ResponseEntity.ok(listarInventarioUseCase.listar(currentUserService.getEmpresaId()));

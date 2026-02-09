@@ -27,6 +27,8 @@ import ec.sgi.backend.application.port.in.ListarFacturasUseCase;
 import ec.sgi.backend.application.port.in.ObtenerFacturaXmlUseCase;
 import ec.sgi.backend.application.port.in.PagoFacturaCommand;
 import ec.sgi.backend.application.port.in.ReenviarFacturasEnProcesoUseCase;
+import ec.sgi.backend.application.port.in.ReenviarFacturaEnProcesoUseCase;
+import ec.sgi.backend.application.usecase.EnviarFacturaPorEmailUseCase;
 import ec.sgi.backend.application.port.out.ClienteRepository;
 import ec.sgi.backend.application.port.out.EmpresaRepository;
 import ec.sgi.backend.application.port.out.FacturaRepository;
@@ -54,14 +56,21 @@ import ec.sgi.backend.domain.service.FacturaTotalsCalculator;
 import ec.sgi.backend.domain.service.ItemCalculo;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -75,7 +84,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFacturaUseCase,
     ListarFacturasEnProcesoUseCase, ReenviarFacturasEnProcesoUseCase,
-    ConsultarFacturaEnProcesoUseCase, ListarFacturasUseCase, ObtenerFacturaXmlUseCase {
+    ReenviarFacturaEnProcesoUseCase, ConsultarFacturaEnProcesoUseCase,
+    ListarFacturasUseCase, ObtenerFacturaXmlUseCase {
   private static final BigDecimal PROPINA_CERO = BigDecimal.ZERO.setScale(2);
   private static final Logger log = LoggerFactory.getLogger(FacturaService.class);
 
@@ -90,6 +100,13 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
   private final SriCorePort sriCorePort;
   private final FacturaTotalsCalculator totalsCalculator;
   private final int maxIntentosConsulta;
+  private final EnviarFacturaPorEmailUseCase enviarFacturaPorEmailUseCase;
+  private final boolean autoSendAuthorized;
+  private final boolean storeXmlFirmado;
+  private final boolean compressXmlFirmado;
+  private final boolean compressXmlAutorizado;
+  private final boolean consultaInmediataEnabled;
+  private final long consultaInmediataDelayMs;
 
   public FacturaService(
       FacturaRepository facturaRepository,
@@ -102,7 +119,14 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
       FirmaElectronicaRepository firmaElectronicaRepository,
       SriCorePort sriCorePort,
       FacturaTotalsCalculator totalsCalculator,
-      @Value("${app.facturas.sri.max-intentos:10}") int maxIntentosConsulta
+      EnviarFacturaPorEmailUseCase enviarFacturaPorEmailUseCase,
+      @Value("${app.facturas.sri.max-intentos:10}") int maxIntentosConsulta,
+      @Value("${app.facturas.email.auto-send-authorized:true}") boolean autoSendAuthorized,
+      @Value("${app.facturas.xml-firmado.store:true}") boolean storeXmlFirmado,
+      @Value("${app.facturas.xml-firmado.compress:true}") boolean compressXmlFirmado,
+      @Value("${app.facturas.xml-autorizado.compress:true}") boolean compressXmlAutorizado,
+      @Value("${app.facturas.sri.consulta-inmediata.enabled:true}") boolean consultaInmediataEnabled,
+      @Value("${app.facturas.sri.consulta-inmediata.delay-ms:10000}") long consultaInmediataDelayMs
   ) {
     this.facturaRepository = facturaRepository;
     this.clienteRepository = clienteRepository;
@@ -114,7 +138,14 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
     this.firmaElectronicaRepository = firmaElectronicaRepository;
     this.sriCorePort = sriCorePort;
     this.totalsCalculator = totalsCalculator;
+    this.enviarFacturaPorEmailUseCase = enviarFacturaPorEmailUseCase;
     this.maxIntentosConsulta = maxIntentosConsulta;
+    this.autoSendAuthorized = autoSendAuthorized;
+    this.storeXmlFirmado = storeXmlFirmado;
+    this.compressXmlFirmado = compressXmlFirmado;
+    this.compressXmlAutorizado = compressXmlAutorizado;
+    this.consultaInmediataEnabled = consultaInmediataEnabled;
+    this.consultaInmediataDelayMs = consultaInmediataDelayMs;
   }
 
   @Override
@@ -187,6 +218,7 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
         null,
         null,
         null,
+        null,
         0,
         null
     );
@@ -229,7 +261,10 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
           .withCoreComprobanteId(result.comprobanteId())
           .withSriEstado(sriEstado)
           .withNumeroAutorizacion(result.numeroAutorizacion());
+      actualizadaFactura = applyXmlFirmado(actualizadaFactura, result);
       facturaRepository.save(actualizadaFactura);
+      autoSendIfAuthorized(factura, actualizadaFactura);
+      actualizadaFactura = consultarEstadoConDelaySiAplica(actualizadaFactura);
       return toCreateResult(actualizadaFactura);
     } catch (SriCoreException ex) {
       Factura error = factura
@@ -260,7 +295,9 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
             sriResult.estadoAutorizacion(),
             sriResult.mensaje()
         ));
+    actualizada = applyXmlAutorizado(actualizada, sriResult);
     facturaRepository.save(actualizada);
+    autoSendIfAuthorized(factura, actualizada);
     return toEstadoResult(actualizada);
   }
 
@@ -306,7 +343,7 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
     if (!empresaId.equals(factura.empresaId())) {
       throw new ForbiddenException("Factura no pertenece a la empresa");
     }
-    String xml = factura.xmlAutorizado();
+    String xml = decodeXmlStored(factura.xmlAutorizado());
     if (xml == null || xml.isBlank()) {
       throw new ResourceNotFoundException("XML no disponible");
     }
@@ -322,6 +359,20 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
       resultados.add(toProcesoResult(actualizada));
     }
     return resultados;
+  }
+
+  @Override
+  public FacturaProcesoResult reenviarEnProceso(Long facturaId, Long empresaId) {
+    Factura factura = facturaRepository.findById(facturaId)
+        .orElseThrow(() -> new ResourceNotFoundException("Factura no encontrada"));
+    if (!empresaId.equals(factura.empresaId())) {
+      throw new ForbiddenException("Factura no pertenece a la empresa");
+    }
+    if (factura.estado() != FacturaEstado.EN_PROCESO) {
+      throw new BusinessRuleException("Factura no esta en proceso");
+    }
+    Factura actualizada = procesarConsultaFactura(factura);
+    return toProcesoResult(actualizada);
   }
 
   public int procesarFacturasEnProceso() {
@@ -371,10 +422,14 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
         String autorizacion = normalizeEstado(sriResult.estadoAutorizacion());
         String consulta = normalizeEstado(sriResult.estadoConsulta());
 
-        if (autorizacion.equals("NO AUTORIZADO")
-                || autorizacion.equals("NO_AUTORIZADO")
-                || autorizacion.equals("RECHAZADO")
-                || autorizacion.equals("RECHAZADA")) {
+    if (autorizacion.equals("NO AUTORIZADO")
+            || autorizacion.equals("NO_AUTORIZADO")
+            || autorizacion.equals("RECHAZADO")
+            || autorizacion.equals("RECHAZADA")
+            || consulta.equals("NO AUTORIZADO")
+            || consulta.equals("NO_AUTORIZADO")
+            || consulta.equals("RECHAZADO")
+            || consulta.equals("RECHAZADA")) {
             return FacturaEstado.NO_AUTORIZADA;
         }
 
@@ -557,7 +612,10 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
       if (actualizada.claveAcceso() == null || actualizada.claveAcceso().isBlank()) {
         actualizada = actualizada.withClaveAcceso(sriResult.claveAcceso());
       }
-      return facturaRepository.save(actualizada);
+      actualizada = applyXmlAutorizado(actualizada, sriResult);
+      Factura guardada = facturaRepository.save(actualizada);
+      autoSendIfAuthorized(intento, guardada);
+      return guardada;
     } catch (SriCoreException ex) {
       log.warn("Error consultando estado SRI para factura {}: {}", factura.id(), ex.getMessage());
       Factura error = intento.withSriEstado(new SriEstado(null, null, ex.getMessage()));
@@ -602,6 +660,121 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
         inventarioRepository.save(actualizado);
       }
     }
+  }
+
+  private void autoSendIfAuthorized(Factura anterior, Factura actualizada) {
+    if (!autoSendAuthorized || actualizada == null) {
+      return;
+    }
+    if (actualizada.estado() != FacturaEstado.AUTORIZADA) {
+      return;
+    }
+    if (anterior != null && anterior.estado() == FacturaEstado.AUTORIZADA) {
+      return;
+    }
+    if (isBlank(actualizada.xmlAutorizado())) {
+      log.warn("Factura {} autorizada sin XML; se omite envio automatico.", actualizada.id());
+      return;
+    }
+    try {
+      enviarFacturaPorEmailUseCase.execute(actualizada.id(), actualizada.empresaId(), null);
+    } catch (BusinessRuleException ex) {
+      log.warn("No se pudo enviar email automatico para factura {}: {}", actualizada.id(), ex.getMessage());
+    } catch (RuntimeException ex) {
+      log.error("Error enviando email automatico para factura {}", actualizada.id(), ex);
+    }
+  }
+
+  private Factura applyXmlFirmado(Factura factura, SriEmitirFacturaResult result) {
+    if (factura == null || result == null || !storeXmlFirmado) {
+      return factura;
+    }
+    String xmlFirmado = result.xmlFirmado();
+    if (isBlank(xmlFirmado)) {
+      return factura;
+    }
+    String stored = compressXmlFirmado ? gzipBase64(xmlFirmado) : xmlFirmado;
+    return factura.withXmlFirmado(stored);
+  }
+
+  private Factura applyXmlAutorizado(Factura factura, SriConsultaEstadoResult sriResult) {
+    if (factura == null || sriResult == null) {
+      return factura;
+    }
+    if (factura.estado() != FacturaEstado.AUTORIZADA) {
+      return factura;
+    }
+    if (!isBlank(factura.xmlAutorizado())) {
+      if (!isBlank(factura.xmlFirmado())) {
+        return factura.withXmlFirmado(null);
+      }
+      return factura;
+    }
+    String xml = sriResult.xmlAutorizado();
+    if (isBlank(xml)) {
+      xml = decodeXmlStored(factura.xmlFirmado());
+    }
+    if (isBlank(xml)) {
+      return factura;
+    }
+    String stored = compressXmlAutorizado ? gzipBase64(xml) : xml;
+    return factura.withXmlAutorizado(stored).withXmlFirmado(null);
+  }
+
+  private Factura consultarEstadoConDelaySiAplica(Factura factura) {
+    if (factura == null || !consultaInmediataEnabled) {
+      return factura;
+    }
+    if (factura.estado() != FacturaEstado.EN_PROCESO) {
+      return factura;
+    }
+    if (consultaInmediataDelayMs <= 0) {
+      return procesarConsultaFactura(factura);
+    }
+    try {
+      Thread.sleep(consultaInmediataDelayMs);
+    } catch (InterruptedException ex) {
+      Thread.currentThread().interrupt();
+      return factura;
+    }
+    return procesarConsultaFactura(factura);
+  }
+
+  private String gzipBase64(String value) {
+    try {
+      byte[] input = value.getBytes(StandardCharsets.UTF_8);
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      try (GZIPOutputStream gzip = new GZIPOutputStream(out)) {
+        gzip.write(input);
+      }
+      return "gzip:" + Base64.getEncoder().encodeToString(out.toByteArray());
+    } catch (IOException ex) {
+      log.warn("No se pudo comprimir XML firmado, se guarda sin comprimir.");
+      return value;
+    }
+  }
+
+  private String decodeXmlStored(String value) {
+    if (isBlank(value)) {
+      return null;
+    }
+    if (!value.startsWith("gzip:")) {
+      return value;
+    }
+    String base64 = value.substring("gzip:".length());
+    try {
+      byte[] compressed = Base64.getDecoder().decode(base64);
+      try (GZIPInputStream gzip = new GZIPInputStream(new ByteArrayInputStream(compressed))) {
+        return new String(gzip.readAllBytes(), StandardCharsets.UTF_8);
+      }
+    } catch (IOException | IllegalArgumentException ex) {
+      log.warn("No se pudo descomprimir XML almacenado.");
+      return null;
+    }
+  }
+
+  private boolean isBlank(String value) {
+    return value == null || value.isBlank();
   }
 
   private List<FacturaPago> mapPagos(List<PagoFacturaCommand> pagos) {

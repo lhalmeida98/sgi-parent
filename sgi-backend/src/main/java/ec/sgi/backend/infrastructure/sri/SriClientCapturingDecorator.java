@@ -30,7 +30,7 @@ public class SriClientCapturingDecorator implements SriClient {
     try {
       SriResponse response = delegate.enviar(comprobante, xmlFirmado);
       SriResponse normalized = normalize(response);
-      responseContext.set(normalized);
+      responseContext.set(normalized, xmlFirmado);
       return normalized;
     } catch (RuntimeException ex) {
       responseContext.clear();

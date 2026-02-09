@@ -379,6 +379,7 @@ public class SriSoapClient implements SriClient, SriConsultaClient, SriLoteClien
     String estadoAutorizacion = firstElementText(doc, "estadoAutorizacion");
     SriConsultaAutorizacionStatus status = mapConsultaAutorizacionStatus(doc, estadoConsulta, estadoAutorizacion);
     String mensaje = mensajesOrDefault(doc, null);
+    String comprobanteXml = firstElementText(doc, "comprobante");
     if (status == SriConsultaAutorizacionStatus.ERROR) {
       return SriConsultaAutorizacionResponse.error(mensaje);
     }
@@ -390,7 +391,8 @@ public class SriSoapClient implements SriClient, SriConsultaClient, SriLoteClien
         firstElementText(doc, "rucEmisor"),
         firstElementText(doc, "tipoComprobante"),
         firstElementText(doc, "fechaAutorizacion"),
-        mensaje
+        mensaje,
+        comprobanteXml
     );
   }
 

@@ -12,6 +12,12 @@ import ec.sgi.backend.application.port.in.ListarProductosUseCase;
 import ec.sgi.backend.security.CurrentUserService;
 import ec.sgi.backend.security.PermisoService;
 import ec.sgi.backend.security.Permisos;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -26,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/productos")
+@Tag(name = "Productos", description = "Gestion de productos.")
 public class ProductoController {
   private final CrearProductoUseCase crearProductoUseCase;
   private final ListarProductosUseCase listarProductosUseCase;
@@ -48,6 +55,14 @@ public class ProductoController {
   }
 
   @PostMapping
+  @Operation(summary = "Crear producto", description = "Crea un producto para la empresa actual.")
+  @SecurityRequirement(name = "bearerAuth")
+  @ApiResponses({
+      @ApiResponse(responseCode = "201", description = "Producto creado"),
+      @ApiResponse(responseCode = "400", description = "Validacion invalida"),
+      @ApiResponse(responseCode = "401", description = "No autorizado"),
+      @ApiResponse(responseCode = "403", description = "Sin permisos")
+  })
   public ResponseEntity<ProductoCreateResult> crear(@Valid @RequestBody ProductoCreateRequest request) {
     permisoService.requirePermiso(Permisos.PRODUCTO_GESTION);
     Long empresaId = currentUserService.getEmpresaId();
@@ -64,14 +79,30 @@ public class ProductoController {
   }
 
   @GetMapping
+  @Operation(summary = "Listar productos", description = "Lista productos de la empresa actual.")
+  @SecurityRequirement(name = "bearerAuth")
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Listado de productos"),
+      @ApiResponse(responseCode = "401", description = "No autorizado"),
+      @ApiResponse(responseCode = "403", description = "Sin permisos")
+  })
   public ResponseEntity<List<ProductoResult>> listar() {
     permisoService.requirePermiso(Permisos.PRODUCTO_GESTION);
     return ResponseEntity.ok(listarProductosUseCase.listar(currentUserService.getEmpresaId()));
   }
 
   @PutMapping("/{productoId}")
+  @Operation(summary = "Actualizar producto", description = "Actualiza un producto existente.")
+  @SecurityRequirement(name = "bearerAuth")
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Producto actualizado"),
+      @ApiResponse(responseCode = "400", description = "Validacion invalida"),
+      @ApiResponse(responseCode = "401", description = "No autorizado"),
+      @ApiResponse(responseCode = "403", description = "Sin permisos"),
+      @ApiResponse(responseCode = "404", description = "Producto no encontrado")
+  })
   public ResponseEntity<ProductoResult> actualizar(
-      @PathVariable Long productoId,
+      @Parameter(description = "ID del producto") @PathVariable Long productoId,
       @Valid @RequestBody ProductoUpdateRequest request
   ) {
     permisoService.requirePermiso(Permisos.PRODUCTO_GESTION);

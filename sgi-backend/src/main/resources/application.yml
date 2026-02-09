@@ -31,7 +31,7 @@ logging:
     com.zaxxer.hikari.HikariConfig: INFO
     com.zaxxer.hikari: INFO
 server:
-  port: ${PORT:8080}
+  port: ${PORT:8081}
 
 app:
   cors:
@@ -57,9 +57,17 @@ app:
   facturas:
     sri:
       max-intentos: 10
+      consulta-inmediata:
+        enabled: true
+        delay-ms: 10000
     scheduler:
-      enabled: true
-      fixed-delay-ms: 5000
+      enabled: false
+      fixed-delay-ms: 15000
+    email:
+      auto-send-authorized: true
+    xml-firmado:
+      store: true
+      compress: true
   security:
     jwt:
       secret: "Odhdz2Lrt9vEtM4r8hf4x68tAaqihJJzgLz91OFOddXKgKdOB5KlxtYn3XO__LsJ"
@@ -67,3 +75,8 @@ app:
   empresa:
     logo:
       storageDir: storage/logos
+
+mail:
+  from:
+    email: ${MAIL_FROM_EMAIL:onboarding@resend.dev}
+    name: ${MAIL_FROM_NAME:}

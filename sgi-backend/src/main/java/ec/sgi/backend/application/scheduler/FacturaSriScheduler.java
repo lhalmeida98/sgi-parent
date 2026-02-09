@@ -20,7 +20,7 @@ public class FacturaSriScheduler {
     this.facturaService = facturaService;
   }
 
-  /*@Scheduled(fixedDelayString = "${app.facturas.scheduler.fixed-delay-ms:5000}")
+  @Scheduled(fixedDelayString = "${app.facturas.scheduler.fixed-delay-ms:15000}")
   public void consultarFacturasEnProceso() {
     int procesadas = facturaService.procesarFacturasEnProceso();
     if (procesadas > 0) {
@@ -28,5 +28,5 @@ public class FacturaSriScheduler {
     } else {
       log.debug("Scheduler SRI sin facturas en proceso");
     }
-  }*/
+  }
 }
