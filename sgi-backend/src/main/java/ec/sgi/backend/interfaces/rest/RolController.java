@@ -9,6 +9,7 @@ import ec.sgi.backend.application.port.in.ListarAccionesUseCase;
 import ec.sgi.backend.application.port.in.ListarRolesUseCase;
 import ec.sgi.backend.application.dto.AccionResult;
 import ec.sgi.backend.security.CurrentUserService;
+import ec.sgi.backend.security.Permisos;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -84,5 +85,16 @@ public class RolController {
   })
   public ResponseEntity<List<AccionResult>> listarAcciones() {
     return ResponseEntity.ok(listarAccionesUseCase.listar(currentUserService.getEmpresaId()));
+  }
+
+  @GetMapping("/permisos")
+  @Operation(summary = "Listar permisos", description = "Lista todos los permisos disponibles en el sistema.")
+  @SecurityRequirement(name = "bearerAuth")
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Listado de permisos"),
+      @ApiResponse(responseCode = "401", description = "No autorizado")
+  })
+  public ResponseEntity<List<String>> listarPermisos() {
+    return ResponseEntity.ok(Permisos.TODOS);
   }
 }
