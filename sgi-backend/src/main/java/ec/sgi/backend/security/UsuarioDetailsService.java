@@ -16,7 +16,8 @@ public class UsuarioDetailsService implements UserDetailsService {
 
   @Override
   public UserDetails loadUserByUsername(String username) {
-    return usuarioJpaRepository.findByEmail(username)
+    String value = username == null ? "" : username.trim();
+    return usuarioJpaRepository.findByEmailOrUsuario(value, value)
         .map(UsuarioPrincipal::new)
         .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
   }

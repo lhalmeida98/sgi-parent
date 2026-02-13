@@ -41,6 +41,13 @@ public class UsuarioService implements CrearUsuarioUseCase, ListarUsuariosUseCas
     usuarioRepository.findByEmail(command.email()).ifPresent(existente -> {
       throw new BusinessRuleException("El email ya esta registrado");
     });
+    String usuario = normalizeUsuario(command.usuario());
+    if (usuario.isBlank()) {
+      throw new BusinessRuleException("Usuario requerido");
+    }
+    usuarioRepository.findByUsuario(usuario).ifPresent(existente -> {
+      throw new BusinessRuleException("El usuario ya esta registrado");
+    });
     String rol = normalizeRol(command.rol());
     validarRolExiste(command.empresaId(), rol);
     boolean activo = command.activo() == null || command.activo();
@@ -49,6 +56,7 @@ public class UsuarioService implements CrearUsuarioUseCase, ListarUsuariosUseCas
         null,
         command.empresaId(),
         command.nombre(),
+        usuario,
         command.email(),
         passwordEncoder.encode(command.password()),
         rol,
@@ -76,6 +84,15 @@ public class UsuarioService implements CrearUsuarioUseCase, ListarUsuariosUseCas
         .ifPresent(usuario -> {
           throw new BusinessRuleException("El email ya esta registrado");
         });
+    String usuario = normalizeUsuario(command.usuario());
+    if (usuario.isBlank()) {
+      throw new BusinessRuleException("Usuario requerido");
+    }
+    usuarioRepository.findByUsuario(usuario)
+        .filter(encontrado -> !encontrado.id().equals(usuarioId))
+        .ifPresent(encontrado -> {
+          throw new BusinessRuleException("El usuario ya esta registrado");
+        });
     String rol = normalizeRol(command.rol());
     validarRolExiste(empresaId, rol);
     String passwordHash = existente.passwordHash();
@@ -86,6 +103,7 @@ public class UsuarioService implements CrearUsuarioUseCase, ListarUsuariosUseCas
         existente.id(),
         existente.empresaId(),
         command.nombre(),
+        usuario,
         command.email(),
         passwordHash,
         rol,
@@ -101,6 +119,10 @@ public class UsuarioService implements CrearUsuarioUseCase, ListarUsuariosUseCas
     return rol.trim().toUpperCase(Locale.ROOT);
   }
 
+  private String normalizeUsuario(String usuario) {
+    return usuario == null ? "" : usuario.trim();
+  }
+
   private void validarRolExiste(Long empresaId, String rol) {
     if ("ADMIN".equalsIgnoreCase(rol)) {
       return;
@@ -114,6 +136,7 @@ public class UsuarioService implements CrearUsuarioUseCase, ListarUsuariosUseCas
     return new UsuarioResult(
         usuario.id(),
         usuario.nombre(),
+        usuario.usuario(),
         usuario.email(),
         usuario.rol(),
         usuario.activo(),

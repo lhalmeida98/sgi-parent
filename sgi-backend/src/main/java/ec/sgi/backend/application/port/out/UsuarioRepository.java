@@ -12,4 +12,6 @@ public interface UsuarioRepository {
   Optional<Usuario> findByIdAndEmpresaId(Long id, Long empresaId);
 
   Optional<Usuario> findByEmail(String email);
+
+  Optional<Usuario> findByUsuario(String usuario);
 }

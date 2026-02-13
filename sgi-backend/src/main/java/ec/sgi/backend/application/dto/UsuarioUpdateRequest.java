@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 
 public record UsuarioUpdateRequest(
     @NotBlank String nombre,
+    @NotBlank String usuario,
     @Email @NotBlank String email,
     @NotBlank String rol,
     @NotNull Boolean activo,

@@ -16,6 +16,7 @@ public class UsuarioEntity {
 
   private Long empresaId;
   private String nombre;
+  private String usuario;
   private String email;
   private String passwordHash;
   private String rol;
@@ -48,6 +49,14 @@ public class UsuarioEntity {
 
   public void setNombre(String nombre) {
     this.nombre = nombre;
+  }
+
+  public String getUsuario() {
+    return usuario;
+  }
+
+  public void setUsuario(String usuario) {
+    this.usuario = usuario;
   }
 
   public String getEmail() {

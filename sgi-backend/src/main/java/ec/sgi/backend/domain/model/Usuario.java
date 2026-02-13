@@ -7,6 +7,7 @@ public record Usuario(
     Long id,
     Long empresaId,
     String nombre,
+    String usuario,
     String email,
     String passwordHash,
     String rol,
@@ -17,6 +18,7 @@ public record Usuario(
   public Usuario {
     Objects.requireNonNull(empresaId, "empresaId");
     Objects.requireNonNull(nombre, "nombre");
+    Objects.requireNonNull(usuario, "usuario");
     Objects.requireNonNull(email, "email");
     Objects.requireNonNull(passwordHash, "passwordHash");
     Objects.requireNonNull(rol, "rol");

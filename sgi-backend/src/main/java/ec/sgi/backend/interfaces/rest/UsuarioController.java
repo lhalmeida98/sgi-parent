@@ -62,6 +62,7 @@ public class UsuarioController {
     UsuarioCreateResult result = crearUsuarioUseCase.crear(new CrearUsuarioCommand(
         empresaId,
         request.nombre(),
+        request.usuario(),
         request.email(),
         request.password(),
         request.rol(),
@@ -99,6 +100,7 @@ public class UsuarioController {
         usuarioId,
         new ActualizarUsuarioCommand(
             request.nombre(),
+            request.usuario(),
             request.email(),
             request.rol(),
             request.activo(),

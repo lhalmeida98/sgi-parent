@@ -2,6 +2,7 @@ package ec.sgi.backend.interfaces.rest;
 
 import ec.sgi.backend.application.dto.AuthLoginRequest;
 import ec.sgi.backend.application.dto.AuthLoginResult;
+import ec.sgi.backend.application.exception.BusinessRuleException;
 import ec.sgi.backend.security.JwtService;
 import ec.sgi.backend.security.UsuarioPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,8 +39,15 @@ public class AuthController {
       @ApiResponse(responseCode = "401", description = "No autorizado")
   })
   public ResponseEntity<AuthLoginResult> login(@Valid @RequestBody AuthLoginRequest request) {
+    String login = request.usuario();
+    if (login == null || login.isBlank()) {
+      login = request.email();
+    }
+    if (login == null || login.isBlank()) {
+      throw new BusinessRuleException("Usuario o email requerido");
+    }
     Authentication authentication = authenticationManager.authenticate(
-        new UsernamePasswordAuthenticationToken(request.email(), request.password())
+        new UsernamePasswordAuthenticationToken(login, request.password())
     );
     UsuarioPrincipal principal = (UsuarioPrincipal) authentication.getPrincipal();
     String token = jwtService.generateToken(principal);
