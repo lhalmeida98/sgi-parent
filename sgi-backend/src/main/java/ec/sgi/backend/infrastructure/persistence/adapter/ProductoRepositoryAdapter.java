@@ -43,6 +43,16 @@ public class ProductoRepositoryAdapter implements ProductoRepository {
     return productoJpaRepository.findByIdAndEmpresaId(id, empresaId).map(this::toDomain);
   }
 
+  @Override
+  public Optional<Producto> findByEmpresaIdAndCodigo(Long empresaId, String codigo) {
+    return productoJpaRepository.findByEmpresaIdAndCodigo(empresaId, codigo).map(this::toDomain);
+  }
+
+  @Override
+  public Optional<Producto> findByEmpresaIdAndCodigoBarras(Long empresaId, String codigoBarras) {
+    return productoJpaRepository.findByEmpresaIdAndCodigoBarras(empresaId, codigoBarras).map(this::toDomain);
+  }
+
   private Producto toDomain(ProductoEntity entity) {
     return new Producto(
         entity.getId(),
@@ -52,6 +62,7 @@ public class ProductoRepositoryAdapter implements ProductoRepository {
         entity.getPrecioUnitario(),
         entity.getCategoriaId(),
         entity.getImpuestoId(),
+        entity.getVendible(),
         entity.getCodigoBarras()
     );
   }
@@ -65,6 +76,7 @@ public class ProductoRepositoryAdapter implements ProductoRepository {
     entity.setPrecioUnitario(producto.precioUnitario());
     entity.setCategoriaId(producto.categoriaId());
     entity.setImpuestoId(producto.impuestoId());
+    entity.setVendible(producto.vendible());
     entity.setCodigoBarras(producto.codigoBarras());
     return entity;
   }

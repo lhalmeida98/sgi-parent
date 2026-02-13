@@ -4,8 +4,11 @@ import ec.sgi.backend.application.dto.ProductoCreateRequest;
 import ec.sgi.backend.application.dto.ProductoCreateResult;
 import ec.sgi.backend.application.dto.ProductoResult;
 import ec.sgi.backend.application.dto.ProductoUpdateRequest;
+import ec.sgi.backend.application.dto.ProductoVendibleUpdateRequest;
 import ec.sgi.backend.application.port.in.ActualizarProductoCommand;
 import ec.sgi.backend.application.port.in.ActualizarProductoUseCase;
+import ec.sgi.backend.application.port.in.ActualizarProductoVendibleUseCase;
+import ec.sgi.backend.application.port.in.BuscarProductoPorCodigoUseCase;
 import ec.sgi.backend.application.port.in.CrearProductoCommand;
 import ec.sgi.backend.application.port.in.CrearProductoUseCase;
 import ec.sgi.backend.application.port.in.ListarProductosUseCase;
@@ -28,6 +31,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -37,6 +41,8 @@ public class ProductoController {
   private final CrearProductoUseCase crearProductoUseCase;
   private final ListarProductosUseCase listarProductosUseCase;
   private final ActualizarProductoUseCase actualizarProductoUseCase;
+  private final ActualizarProductoVendibleUseCase actualizarProductoVendibleUseCase;
+  private final BuscarProductoPorCodigoUseCase buscarProductoPorCodigoUseCase;
   private final CurrentUserService currentUserService;
   private final PermisoService permisoService;
 
@@ -44,12 +50,16 @@ public class ProductoController {
       CrearProductoUseCase crearProductoUseCase,
       ListarProductosUseCase listarProductosUseCase,
       ActualizarProductoUseCase actualizarProductoUseCase,
+      ActualizarProductoVendibleUseCase actualizarProductoVendibleUseCase,
+      BuscarProductoPorCodigoUseCase buscarProductoPorCodigoUseCase,
       CurrentUserService currentUserService,
       PermisoService permisoService
   ) {
     this.crearProductoUseCase = crearProductoUseCase;
     this.listarProductosUseCase = listarProductosUseCase;
     this.actualizarProductoUseCase = actualizarProductoUseCase;
+    this.actualizarProductoVendibleUseCase = actualizarProductoVendibleUseCase;
+    this.buscarProductoPorCodigoUseCase = buscarProductoPorCodigoUseCase;
     this.currentUserService = currentUserService;
     this.permisoService = permisoService;
   }
@@ -73,6 +83,7 @@ public class ProductoController {
         request.precioUnitario(),
         request.categoriaId(),
         request.impuestoId(),
+        request.vendible(),
         request.codigoBarras()
     ));
     return ResponseEntity.status(HttpStatus.CREATED).body(result);
@@ -89,6 +100,24 @@ public class ProductoController {
   public ResponseEntity<List<ProductoResult>> listar() {
     permisoService.requirePermiso(Permisos.PRODUCTO_GESTION);
     return ResponseEntity.ok(listarProductosUseCase.listar(currentUserService.getEmpresaId()));
+  }
+
+  @GetMapping("/buscar")
+  @Operation(summary = "Buscar producto por codigo", description = "Busca un producto por codigo o codigo de barras.")
+  @SecurityRequirement(name = "bearerAuth")
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Producto encontrado"),
+      @ApiResponse(responseCode = "400", description = "Codigo requerido"),
+      @ApiResponse(responseCode = "401", description = "No autorizado"),
+      @ApiResponse(responseCode = "403", description = "Sin permisos"),
+      @ApiResponse(responseCode = "404", description = "Producto no encontrado")
+  })
+  public ResponseEntity<ProductoResult> buscar(
+      @Parameter(description = "Codigo o codigo de barras") @RequestParam("codigo") String codigo
+  ) {
+    permisoService.requirePermiso(Permisos.PRODUCTO_GESTION);
+    ProductoResult result = buscarProductoPorCodigoUseCase.buscar(currentUserService.getEmpresaId(), codigo);
+    return ResponseEntity.ok(result);
   }
 
   @PutMapping("/{productoId}")
@@ -115,8 +144,32 @@ public class ProductoController {
             request.precioUnitario(),
             request.categoriaId(),
             request.impuestoId(),
+            request.vendible(),
             request.codigoBarras()
         )
+    );
+    return ResponseEntity.ok(result);
+  }
+
+  @PutMapping("/{productoId}/vendible")
+  @Operation(summary = "Actualizar vendible", description = "Actualiza el estado vendible de un producto.")
+  @SecurityRequirement(name = "bearerAuth")
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Producto actualizado"),
+      @ApiResponse(responseCode = "400", description = "Validacion invalida"),
+      @ApiResponse(responseCode = "401", description = "No autorizado"),
+      @ApiResponse(responseCode = "403", description = "Sin permisos"),
+      @ApiResponse(responseCode = "404", description = "Producto no encontrado")
+  })
+  public ResponseEntity<ProductoResult> actualizarVendible(
+      @Parameter(description = "ID del producto") @PathVariable Long productoId,
+      @Valid @RequestBody ProductoVendibleUpdateRequest request
+  ) {
+    permisoService.requirePermiso(Permisos.PRODUCTO_GESTION);
+    ProductoResult result = actualizarProductoVendibleUseCase.actualizarVendible(
+        currentUserService.getEmpresaId(),
+        productoId,
+        request.vendible()
     );
     return ResponseEntity.ok(result);
   }

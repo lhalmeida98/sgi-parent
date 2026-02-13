@@ -58,6 +58,7 @@ public class PreordenRepositoryAdapter implements PreordenRepository {
     List<PreordenItem> items = new ArrayList<>();
     for (PreordenItemEntity itemEntity : entity.getItems()) {
       items.add(new PreordenItem(
+          itemEntity.getBodegaId(),
           itemEntity.getProductoId(),
           itemEntity.getCodigoPrincipal(),
           itemEntity.getDescripcion(),
@@ -104,6 +105,7 @@ public class PreordenRepositoryAdapter implements PreordenRepository {
     for (PreordenItem item : preorden.items()) {
       PreordenItemEntity itemEntity = new PreordenItemEntity();
       itemEntity.setPreorden(entity);
+      itemEntity.setBodegaId(item.bodegaId());
       itemEntity.setProductoId(item.productoId());
       itemEntity.setCodigoPrincipal(item.codigoPrincipal());
       itemEntity.setDescripcion(item.descripcion());

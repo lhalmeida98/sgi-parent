@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.Objects;
 
 public record ItemCalculo(
+    Long bodegaId,
     Long productoId,
     String codigoPrincipal,
     String descripcion,

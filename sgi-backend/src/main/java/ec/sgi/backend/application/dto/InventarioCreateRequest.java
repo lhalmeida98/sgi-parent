@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 public record InventarioCreateRequest(
+    @NotNull Long bodegaId,
     @NotNull Long productoId,
     @NotNull @DecimalMin("0.00") BigDecimal stockActual,
     @NotNull @DecimalMin("0.00") BigDecimal stockMinimo,

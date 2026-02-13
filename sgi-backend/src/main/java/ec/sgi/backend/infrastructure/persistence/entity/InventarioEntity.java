@@ -16,6 +16,7 @@ public class InventarioEntity {
   private Long id;
 
   private Long empresaId;
+  private Long bodegaId;
   private Long productoId;
   private BigDecimal stockActual;
   private BigDecimal stockReservado;
@@ -42,6 +43,14 @@ public class InventarioEntity {
 
   public void setEmpresaId(Long empresaId) {
     this.empresaId = empresaId;
+  }
+
+  public Long getBodegaId() {
+    return bodegaId;
+  }
+
+  public void setBodegaId(Long bodegaId) {
+    this.bodegaId = bodegaId;
   }
 
   public Long getProductoId() {

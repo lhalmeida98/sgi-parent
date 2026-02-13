@@ -22,6 +22,7 @@ public record CrearPreordenCommand(
   }
 
   public record ItemPreordenCommand(
+      Long bodegaId,
       Long productoId,
       BigDecimal cantidad,
       BigDecimal descuento

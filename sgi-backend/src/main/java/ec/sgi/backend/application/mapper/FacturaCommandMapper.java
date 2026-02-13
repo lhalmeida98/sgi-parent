@@ -25,7 +25,7 @@ public class FacturaCommandMapper {
 
   private List<ItemFacturaCommand> toItems(List<FacturaItemRequest> items) {
     return items.stream()
-        .map(item -> new ItemFacturaCommand(item.productoId(), item.cantidad(), item.descuento()))
+        .map(item -> new ItemFacturaCommand(item.bodegaId(), item.productoId(), item.cantidad(), item.descuento()))
         .toList();
   }
 

@@ -9,6 +9,7 @@ public record CrearProductoCommand(
     BigDecimal precioUnitario,
     Long categoriaId,
     Long impuestoId,
+    Boolean vendible,
     String codigoBarras
 ) {
   public CrearProductoCommand {

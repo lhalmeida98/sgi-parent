@@ -39,6 +39,10 @@ app:
   sri:
     client: soap
     xmlVersion: "1.0.0"
+    contribuyente:
+      enabled: true
+      base-url: ${SRI_CONTRIBUYENTE_URL:https://srienlinea.sri.gob.ec/sri-catastro-sujeto-servicio-internet/rest/ConsolidadoContribuyente/obtenerPorNumerosRuc}
+      timeout-ms: ${SRI_CONTRIBUYENTE_TIMEOUT_MS:4000}
     pruebas:
       recepcion-url: https://celcer.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline?wsdl
       autorizacion-url: https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl

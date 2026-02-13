@@ -87,6 +87,7 @@ public class PreordenController {
 
   private CrearPreordenCommand.ItemPreordenCommand toItemCommand(PreordenItemRequest item) {
     return new CrearPreordenCommand.ItemPreordenCommand(
+        item.bodegaId(),
         item.productoId(),
         item.cantidad(),
         item.descuento()

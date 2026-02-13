@@ -21,6 +21,7 @@ public class PreordenItemEntity {
   @JoinColumn(name = "preorden_id")
   private PreordenEntity preorden;
 
+  private Long bodegaId;
   private Long productoId;
   private String codigoPrincipal;
   private String descripcion;
@@ -46,6 +47,14 @@ public class PreordenItemEntity {
 
   public void setPreorden(PreordenEntity preorden) {
     this.preorden = preorden;
+  }
+
+  public Long getBodegaId() {
+    return bodegaId;
+  }
+
+  public void setBodegaId(Long bodegaId) {
+    this.bodegaId = bodegaId;
   }
 
   public Long getProductoId() {

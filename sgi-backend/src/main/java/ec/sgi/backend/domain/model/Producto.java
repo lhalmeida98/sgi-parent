@@ -11,6 +11,7 @@ public record Producto(
     BigDecimal precioUnitario,
     Long categoriaId,
     Long impuestoId,
+    boolean vendible,
     String codigoBarras
 ) {
   public Producto {

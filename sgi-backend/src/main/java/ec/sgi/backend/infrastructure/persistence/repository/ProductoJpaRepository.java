@@ -9,4 +9,8 @@ public interface ProductoJpaRepository extends JpaRepository<ProductoEntity, Lon
   List<ProductoEntity> findByEmpresaId(Long empresaId);
 
   Optional<ProductoEntity> findByIdAndEmpresaId(Long id, Long empresaId);
+
+  Optional<ProductoEntity> findByEmpresaIdAndCodigo(Long empresaId, String codigo);
+
+  Optional<ProductoEntity> findByEmpresaIdAndCodigoBarras(Long empresaId, String codigoBarras);
 }

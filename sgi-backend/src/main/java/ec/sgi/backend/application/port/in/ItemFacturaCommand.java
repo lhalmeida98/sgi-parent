@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.Objects;
 
 public record ItemFacturaCommand(
+    Long bodegaId,
     Long productoId,
     BigDecimal cantidad,
     BigDecimal descuento

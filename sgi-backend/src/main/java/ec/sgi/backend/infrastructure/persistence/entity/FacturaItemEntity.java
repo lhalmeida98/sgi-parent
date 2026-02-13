@@ -25,6 +25,7 @@ public class FacturaItemEntity {
   @JoinColumn(name = "factura_id")
   private FacturaEntity factura;
 
+  private Long bodegaId;
   private Long productoId;
   private String codigoPrincipal;
   private String descripcion;
@@ -53,6 +54,14 @@ public class FacturaItemEntity {
 
   public void setFactura(FacturaEntity factura) {
     this.factura = factura;
+  }
+
+  public Long getBodegaId() {
+    return bodegaId;
+  }
+
+  public void setBodegaId(Long bodegaId) {
+    this.bodegaId = bodegaId;
   }
 
   public Long getProductoId() {

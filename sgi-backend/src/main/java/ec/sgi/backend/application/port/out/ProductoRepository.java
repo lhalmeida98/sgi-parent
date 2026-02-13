@@ -14,4 +14,8 @@ public interface ProductoRepository {
   List<Producto> findByEmpresaId(Long empresaId);
 
   Optional<Producto> findByIdAndEmpresaId(Long id, Long empresaId);
+
+  Optional<Producto> findByEmpresaIdAndCodigo(Long empresaId, String codigo);
+
+  Optional<Producto> findByEmpresaIdAndCodigoBarras(Long empresaId, String codigoBarras);
 }

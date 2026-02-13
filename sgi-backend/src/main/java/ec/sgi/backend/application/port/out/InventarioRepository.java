@@ -9,6 +9,14 @@ public interface InventarioRepository {
 
   Optional<Inventario> findByProductoIdAndEmpresaIdForUpdate(Long productoId, Long empresaId);
 
+  Optional<Inventario> findByProductoIdAndEmpresaIdAndBodegaIdForUpdate(Long productoId, Long empresaId, Long bodegaId);
+
+  List<Inventario> findByProductoIdAndEmpresaId(Long productoId, Long empresaId);
+
+  Optional<Inventario> findByProductoIdAndEmpresaIdAndBodegaId(Long productoId, Long empresaId, Long bodegaId);
+
+  List<Inventario> findByEmpresaIdAndBodegaId(Long empresaId, Long bodegaId);
+
   Inventario save(Inventario inventario);
 
   List<Inventario> findAll();

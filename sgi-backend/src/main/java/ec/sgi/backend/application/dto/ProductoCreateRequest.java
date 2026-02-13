@@ -10,6 +10,7 @@ public record ProductoCreateRequest(
     @NotNull BigDecimal precioUnitario,
     @NotNull Long categoriaId,
     @NotNull Long impuestoId,
+    Boolean vendible,
     String codigoBarras
 ) {
 }

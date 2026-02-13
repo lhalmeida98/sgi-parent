@@ -20,6 +20,7 @@ public class ProductoEntity {
   private BigDecimal precioUnitario;
   private Long categoriaId;
   private Long impuestoId;
+  private boolean vendible;
   private String codigoBarras;
 
   public ProductoEntity() {
@@ -79,6 +80,14 @@ public class ProductoEntity {
 
   public void setImpuestoId(Long impuestoId) {
     this.impuestoId = impuestoId;
+  }
+
+  public boolean getVendible() {
+    return vendible;
+  }
+
+  public void setVendible(boolean vendible) {
+    this.vendible = vendible;
   }
 
   public String getCodigoBarras() {

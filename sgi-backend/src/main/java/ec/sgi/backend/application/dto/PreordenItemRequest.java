@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 public record PreordenItemRequest(
+    Long bodegaId,
     @NotNull Long productoId,
     @NotNull @DecimalMin("0.0001") BigDecimal cantidad,
     @NotNull @DecimalMin("0.00") BigDecimal descuento

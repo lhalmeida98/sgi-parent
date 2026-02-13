@@ -38,6 +38,7 @@ public class FacturaTotalsCalculator {
       );
 
       FacturaItem detalle = new FacturaItem(
+          item.bodegaId(),
           item.productoId(),
           item.codigoPrincipal(),
           item.descripcion(),

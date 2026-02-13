@@ -5,6 +5,7 @@ import java.util.Objects;
 
 public record CrearInventarioCommand(
     Long empresaId,
+    Long bodegaId,
     Long productoId,
     BigDecimal stockActual,
     BigDecimal stockMinimo,
@@ -14,6 +15,7 @@ public record CrearInventarioCommand(
 ) {
   public CrearInventarioCommand {
     Objects.requireNonNull(empresaId, "empresaId");
+    Objects.requireNonNull(bodegaId, "bodegaId");
     Objects.requireNonNull(productoId, "productoId");
     Objects.requireNonNull(stockActual, "stockActual");
     Objects.requireNonNull(stockMinimo, "stockMinimo");

@@ -6,6 +6,7 @@ import ec.sgi.backend.infrastructure.persistence.entity.BodegaEntity;
 import ec.sgi.backend.infrastructure.persistence.repository.BodegaJpaRepository;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -26,6 +27,11 @@ public class BodegaRepositoryAdapter implements BodegaRepository {
     return bodegaJpaRepository.findByEmpresaId(empresaId).stream()
         .map(this::toDomain)
         .toList();
+  }
+
+  @Override
+  public Optional<Bodega> findByIdAndEmpresaId(Long id, Long empresaId) {
+    return bodegaJpaRepository.findByIdAndEmpresaId(id, empresaId).map(this::toDomain);
   }
 
   private Bodega toDomain(BodegaEntity entity) {

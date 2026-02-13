@@ -9,6 +9,9 @@ public final class Permisos {
   public static final String IMPUESTO_GESTION = "IMPUESTO_GESTION";
   public static final String INVENTARIO_GESTION = "INVENTARIO_GESTION";
   public static final String BODEGA_GESTION = "BODEGA_GESTION";
+  public static final String PROVEEDOR_GESTION = "PROVEEDOR_GESTION";
+  public static final String CXP_GESTION = "CXP_GESTION";
+  public static final String PAGO_PROVEEDOR_GESTION = "PAGO_PROVEEDOR_GESTION";
   public static final String USUARIO_ADMIN = "USUARIO_ADMIN";
   public static final String ROL_ADMIN = "ROL_ADMIN";
   public static final String EMPRESA_ADMIN = "EMPRESA_ADMIN";

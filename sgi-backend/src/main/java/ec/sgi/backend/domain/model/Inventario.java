@@ -7,6 +7,7 @@ import java.util.Objects;
 public record Inventario(
     Long id,
     Long empresaId,
+    Long bodegaId,
     Long productoId,
     BigDecimal stockActual,
     BigDecimal stockReservado,
@@ -18,6 +19,7 @@ public record Inventario(
 ) {
   public Inventario {
     Objects.requireNonNull(empresaId, "empresaId");
+    Objects.requireNonNull(bodegaId, "bodegaId");
     Objects.requireNonNull(productoId, "productoId");
     Objects.requireNonNull(stockActual, "stockActual");
     stockReservado = stockReservado == null ? BigDecimal.ZERO : stockReservado;
@@ -27,6 +29,7 @@ public record Inventario(
     return new Inventario(
         id,
         empresaId,
+        bodegaId,
         productoId,
         nuevoStock,
         stockReservado,
@@ -42,6 +45,7 @@ public record Inventario(
     return new Inventario(
         id,
         empresaId,
+        bodegaId,
         productoId,
         stockActual,
         nuevoReservado,
@@ -57,6 +61,7 @@ public record Inventario(
     return new Inventario(
         id,
         empresaId,
+        bodegaId,
         productoId,
         stockActual,
         stockReservado,
@@ -65,6 +70,22 @@ public record Inventario(
         ubicacion,
         costoPromedio,
         nuevoTimestamp
+    );
+  }
+
+  public Inventario withCostoPromedio(BigDecimal nuevoCosto) {
+    return new Inventario(
+        id,
+        empresaId,
+        bodegaId,
+        productoId,
+        stockActual,
+        stockReservado,
+        stockMinimo,
+        stockMaximo,
+        ubicacion,
+        nuevoCosto,
+        actualizadoEn
     );
   }
 }

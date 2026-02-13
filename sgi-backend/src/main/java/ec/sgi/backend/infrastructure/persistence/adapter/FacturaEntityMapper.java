@@ -60,6 +60,7 @@ public class FacturaEntityMapper {
     for (FacturaItem item : factura.items()) {
       FacturaItemEntity itemEntity = new FacturaItemEntity();
       itemEntity.setFactura(entity);
+      itemEntity.setBodegaId(item.bodegaId());
       itemEntity.setProductoId(item.productoId());
       itemEntity.setCodigoPrincipal(item.codigoPrincipal());
       itemEntity.setDescripcion(item.descripcion());
@@ -139,6 +140,7 @@ public class FacturaEntityMapper {
         ));
       }
       items.add(new FacturaItem(
+          itemEntity.getBodegaId(),
           itemEntity.getProductoId(),
           itemEntity.getCodigoPrincipal(),
           itemEntity.getDescripcion(),

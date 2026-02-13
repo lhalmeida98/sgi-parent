@@ -28,6 +28,33 @@ public class InventarioRepositoryAdapter implements InventarioRepository {
   }
 
   @Override
+  public Optional<Inventario> findByProductoIdAndEmpresaIdAndBodegaIdForUpdate(Long productoId, Long empresaId,
+      Long bodegaId) {
+    return inventarioJpaRepository.lockByProductoIdAndEmpresaIdAndBodegaId(productoId, empresaId, bodegaId)
+        .map(this::toDomain);
+  }
+
+  @Override
+  public List<Inventario> findByProductoIdAndEmpresaId(Long productoId, Long empresaId) {
+    return inventarioJpaRepository.findAllByProductoIdAndEmpresaId(productoId, empresaId).stream()
+        .map(this::toDomain)
+        .toList();
+  }
+
+  @Override
+  public Optional<Inventario> findByProductoIdAndEmpresaIdAndBodegaId(Long productoId, Long empresaId, Long bodegaId) {
+    return inventarioJpaRepository.findByProductoIdAndEmpresaIdAndBodegaId(productoId, empresaId, bodegaId)
+        .map(this::toDomain);
+  }
+
+  @Override
+  public List<Inventario> findByEmpresaIdAndBodegaId(Long empresaId, Long bodegaId) {
+    return inventarioJpaRepository.findByEmpresaIdAndBodegaId(empresaId, bodegaId).stream()
+        .map(this::toDomain)
+        .toList();
+  }
+
+  @Override
   public Inventario save(Inventario inventario) {
     return toDomain(inventarioJpaRepository.save(toEntity(inventario)));
   }
@@ -51,6 +78,7 @@ public class InventarioRepositoryAdapter implements InventarioRepository {
     return new Inventario(
         entity.getId(),
         entity.getEmpresaId(),
+        entity.getBodegaId(),
         entity.getProductoId(),
         entity.getStockActual(),
         reservado,
@@ -66,6 +94,7 @@ public class InventarioRepositoryAdapter implements InventarioRepository {
     InventarioEntity entity = new InventarioEntity();
     entity.setId(inventario.id());
     entity.setEmpresaId(inventario.empresaId());
+    entity.setBodegaId(inventario.bodegaId());
     entity.setProductoId(inventario.productoId());
     entity.setStockActual(inventario.stockActual());
     entity.setStockReservado(inventario.stockReservado());

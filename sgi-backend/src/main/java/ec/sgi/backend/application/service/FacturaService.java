@@ -30,6 +30,7 @@ import ec.sgi.backend.application.port.in.ReenviarFacturasEnProcesoUseCase;
 import ec.sgi.backend.application.port.in.ReenviarFacturaEnProcesoUseCase;
 import ec.sgi.backend.application.usecase.EnviarFacturaPorEmailUseCase;
 import ec.sgi.backend.application.port.out.ClienteRepository;
+import ec.sgi.backend.application.port.out.BodegaRepository;
 import ec.sgi.backend.application.port.out.EmpresaRepository;
 import ec.sgi.backend.application.port.out.FacturaRepository;
 import ec.sgi.backend.application.port.out.FirmaElectronicaRepository;
@@ -59,6 +60,7 @@ import java.math.BigInteger;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
@@ -97,6 +99,7 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
   private final PreordenRepository preordenRepository;
   private final EmpresaRepository empresaRepository;
   private final FirmaElectronicaRepository firmaElectronicaRepository;
+  private final BodegaRepository bodegaRepository;
   private final SriCorePort sriCorePort;
   private final FacturaTotalsCalculator totalsCalculator;
   private final int maxIntentosConsulta;
@@ -117,6 +120,7 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
       PreordenRepository preordenRepository,
       EmpresaRepository empresaRepository,
       FirmaElectronicaRepository firmaElectronicaRepository,
+      BodegaRepository bodegaRepository,
       SriCorePort sriCorePort,
       FacturaTotalsCalculator totalsCalculator,
       EnviarFacturaPorEmailUseCase enviarFacturaPorEmailUseCase,
@@ -136,6 +140,7 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
     this.preordenRepository = preordenRepository;
     this.empresaRepository = empresaRepository;
     this.firmaElectronicaRepository = firmaElectronicaRepository;
+    this.bodegaRepository = bodegaRepository;
     this.sriCorePort = sriCorePort;
     this.totalsCalculator = totalsCalculator;
     this.enviarFacturaPorEmailUseCase = enviarFacturaPorEmailUseCase;
@@ -167,11 +172,16 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
 
     List<ItemCalculo> items = new ArrayList<>();
     for (var item : command.items()) {
+      if (item.bodegaId() != null) {
+        bodegaRepository.findByIdAndEmpresaId(item.bodegaId(), empresa.id())
+            .orElseThrow(() -> new ResourceNotFoundException("Bodega no encontrada"));
+      }
       Producto producto = productoRepository.findByIdAndEmpresaId(item.productoId(), empresa.id())
           .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
       Impuesto impuesto = impuestoRepository.findByIdAndEmpresaId(producto.impuestoId(), empresa.id())
           .orElseThrow(() -> new ResourceNotFoundException("Impuesto no encontrado"));
       items.add(new ItemCalculo(
+          item.bodegaId(),
           producto.id(),
           producto.codigo(),
           producto.descripcion(),
@@ -226,9 +236,6 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
 
     ajustarInventarioPorFactura(calculo.items(), preorden, empresa.id());
 
-    Empresa actualizada = empresa.withSecuencial(nextSecuencial(secuencial));
-    empresaRepository.save(actualizada);
-
     try {
       Path firmaPath = resolveFirmaPath(firma);
       SriEmitirFacturaRequest sriRequest = SriEmitirFacturaRequestBuilder.build(
@@ -263,10 +270,21 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
           .withNumeroAutorizacion(result.numeroAutorizacion());
       actualizadaFactura = applyXmlFirmado(actualizadaFactura, result);
       facturaRepository.save(actualizadaFactura);
+      revertirInventarioSiAplica(factura, actualizadaFactura);
       autoSendIfAuthorized(factura, actualizadaFactura);
       actualizadaFactura = consultarEstadoConDelaySiAplica(actualizadaFactura);
+      if (actualizadaFactura.estado() != FacturaEstado.NO_AUTORIZADA
+          && actualizadaFactura.estado() != FacturaEstado.ERROR) {
+        Empresa actualizada = empresa.withSecuencial(nextSecuencial(secuencial));
+        empresaRepository.save(actualizada);
+      }
       return toCreateResult(actualizadaFactura);
     } catch (SriCoreException ex) {
+      try {
+        revertirInventarioPorFactura(calculo.items(), preorden, empresa.id());
+      } catch (RuntimeException revertEx) {
+        log.error("No se pudo revertir inventario para factura {}: {}", factura.id(), revertEx.getMessage());
+      }
       Factura error = factura
           .withEstado(FacturaEstado.ERROR)
           .withSriEstado(new SriEstado(null, null, ex.getMessage()));
@@ -296,6 +314,7 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
             sriResult.mensaje()
         ));
     actualizada = applyXmlAutorizado(actualizada, sriResult);
+    revertirInventarioSiAplica(factura, actualizada);
     facturaRepository.save(actualizada);
     autoSendIfAuthorized(factura, actualizada);
     return toEstadoResult(actualizada);
@@ -581,6 +600,7 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
       Factura sinClave = factura
           .withEstado(FacturaEstado.ERROR)
           .withSriEstado(new SriEstado(null, null, "Factura sin clave de acceso"));
+      revertirInventarioSiAplica(factura, sinClave);
       return facturaRepository.save(sinClave);
     }
 
@@ -589,6 +609,7 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
       Factura agotada = factura
           .withEstado(FacturaEstado.ERROR)
           .withSriEstado(new SriEstado(null, null, "Maximo de intentos alcanzado"));
+      revertirInventarioSiAplica(factura, agotada);
       return facturaRepository.save(agotada);
     }
 
@@ -613,6 +634,7 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
         actualizada = actualizada.withClaveAcceso(sriResult.claveAcceso());
       }
       actualizada = applyXmlAutorizado(actualizada, sriResult);
+      revertirInventarioSiAplica(factura, actualizada);
       Factura guardada = facturaRepository.save(actualizada);
       autoSendIfAuthorized(intento, guardada);
       return guardada;
@@ -631,34 +653,243 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
     boolean usaReserva = preorden != null && preorden.reservaInventario();
     LocalDateTime ahora = LocalDateTime.now();
     for (FacturaItem item : items) {
-      Inventario inventario = inventarioRepository.findByProductoIdAndEmpresaIdForUpdate(
+      BigDecimal cantidad = item.cantidad();
+      if (item.bodegaId() != null) {
+        Inventario inventario = inventarioRepository.findByProductoIdAndEmpresaIdAndBodegaIdForUpdate(
+            item.productoId(),
+            empresaId,
+            item.bodegaId()
+        ).orElseThrow(() -> new BusinessRuleException("Inventario no encontrado para producto " + item.productoId()));
+        if (usaReserva) {
+          if (inventario.stockReservado().compareTo(cantidad) < 0) {
+            throw new BusinessRuleException("Stock reservado insuficiente para producto " + item.productoId());
+          }
+          if (inventario.stockActual().compareTo(cantidad) < 0) {
+            throw new BusinessRuleException("Stock insuficiente para facturar producto " + item.productoId());
+          }
+          Inventario actualizado = inventario
+              .withStockActual(inventario.stockActual().subtract(cantidad))
+              .withStockReservado(inventario.stockReservado().subtract(cantidad))
+              .withActualizadoEn(ahora);
+          inventarioRepository.save(actualizado);
+        } else {
+          BigDecimal disponible = inventario.stockActual().subtract(inventario.stockReservado());
+          if (disponible.compareTo(cantidad) < 0) {
+            throw new BusinessRuleException("Stock insuficiente para facturar producto " + item.productoId());
+          }
+          Inventario actualizado = inventario
+              .withStockActual(inventario.stockActual().subtract(cantidad))
+              .withActualizadoEn(ahora);
+          inventarioRepository.save(actualizado);
+        }
+        continue;
+      }
+      List<Inventario> inventarios = inventarioRepository.findByProductoIdAndEmpresaId(
           item.productoId(),
           empresaId
-      )
-          .orElseThrow(() -> new BusinessRuleException("Inventario no encontrado para producto " + item.productoId()));
-      BigDecimal cantidad = item.cantidad();
+      );
+      if (inventarios.isEmpty()) {
+        throw new BusinessRuleException("Inventario no encontrado para producto " + item.productoId());
+      }
       if (usaReserva) {
-        if (inventario.stockReservado().compareTo(cantidad) < 0) {
+        BigDecimal reservadoTotal = inventarios.stream()
+            .map(Inventario::stockReservado)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal stockTotal = inventarios.stream()
+            .map(Inventario::stockActual)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (reservadoTotal.compareTo(cantidad) < 0) {
           throw new BusinessRuleException("Stock reservado insuficiente para producto " + item.productoId());
         }
-        if (inventario.stockActual().compareTo(cantidad) < 0) {
+        if (stockTotal.compareTo(cantidad) < 0) {
           throw new BusinessRuleException("Stock insuficiente para facturar producto " + item.productoId());
         }
-        Inventario actualizado = inventario
-            .withStockActual(inventario.stockActual().subtract(cantidad))
-            .withStockReservado(inventario.stockReservado().subtract(cantidad))
-            .withActualizadoEn(ahora);
-        inventarioRepository.save(actualizado);
+        descontarConReserva(inventarios, cantidad, ahora);
       } else {
-        BigDecimal disponible = inventario.stockActual().subtract(inventario.stockReservado());
-        if (disponible.compareTo(cantidad) < 0) {
+        BigDecimal disponibleTotal = inventarios.stream()
+            .map(inv -> inv.stockActual().subtract(inv.stockReservado()))
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (disponibleTotal.compareTo(cantidad) < 0) {
           throw new BusinessRuleException("Stock insuficiente para facturar producto " + item.productoId());
         }
-        Inventario actualizado = inventario
-            .withStockActual(inventario.stockActual().subtract(cantidad))
-            .withActualizadoEn(ahora);
-        inventarioRepository.save(actualizado);
+        descontarSinReserva(inventarios, cantidad, ahora);
       }
+    }
+  }
+
+  private void revertirInventarioSiAplica(Factura anterior, Factura actualizada) {
+    if (anterior == null || actualizada == null) {
+      return;
+    }
+    if (!requiereReversion(anterior.estado(), actualizada.estado())) {
+      return;
+    }
+    Preorden preorden = obtenerPreordenParaFactura(actualizada);
+    revertirInventarioPorFactura(actualizada.items(), preorden, actualizada.empresaId());
+  }
+
+  private boolean requiereReversion(FacturaEstado anterior, FacturaEstado nuevo) {
+    if (nuevo != FacturaEstado.NO_AUTORIZADA && nuevo != FacturaEstado.ERROR) {
+      return false;
+    }
+    return anterior != FacturaEstado.NO_AUTORIZADA && anterior != FacturaEstado.ERROR;
+  }
+
+  private Preorden obtenerPreordenParaFactura(Factura factura) {
+    if (factura == null || factura.preordenId() == null) {
+      return null;
+    }
+    return preordenRepository.findByIdAndEmpresaId(factura.preordenId(), factura.empresaId())
+        .orElse(null);
+  }
+
+  private void revertirInventarioPorFactura(List<FacturaItem> items, Preorden preorden, Long empresaId) {
+    boolean usaReserva = preorden != null && preorden.reservaInventario();
+    LocalDateTime ahora = LocalDateTime.now();
+    for (FacturaItem item : items) {
+      BigDecimal cantidad = item.cantidad();
+      if (item.bodegaId() != null) {
+        Inventario inventario = inventarioRepository.findByProductoIdAndEmpresaIdAndBodegaIdForUpdate(
+            item.productoId(),
+            empresaId,
+            item.bodegaId()
+        ).orElseThrow(() -> new BusinessRuleException("Inventario no encontrado para producto " + item.productoId()));
+        if (usaReserva) {
+          Inventario actualizado = inventario
+              .withStockActual(inventario.stockActual().add(cantidad))
+              .withStockReservado(inventario.stockReservado().add(cantidad))
+              .withActualizadoEn(ahora);
+          inventarioRepository.save(actualizado);
+        } else {
+          Inventario actualizado = inventario
+              .withStockActual(inventario.stockActual().add(cantidad))
+              .withActualizadoEn(ahora);
+          inventarioRepository.save(actualizado);
+        }
+        continue;
+      }
+      List<Inventario> inventarios = inventarioRepository.findByProductoIdAndEmpresaId(
+          item.productoId(),
+          empresaId
+      );
+      if (inventarios.isEmpty()) {
+        throw new BusinessRuleException("Inventario no encontrado para producto " + item.productoId());
+      }
+      if (usaReserva) {
+        restaurarConReserva(inventarios, cantidad, ahora);
+      } else {
+        restaurarSinReserva(inventarios, cantidad, ahora);
+      }
+    }
+  }
+
+  private void restaurarConReserva(List<Inventario> inventarios, BigDecimal cantidad, LocalDateTime ahora) {
+    BigDecimal restante = cantidad;
+    List<Inventario> ordenados = inventarios.stream()
+        .sorted((a, b) -> b.stockReservado().compareTo(a.stockReservado()))
+        .toList();
+    for (int i = 0; i < ordenados.size(); i++) {
+      if (restante.compareTo(BigDecimal.ZERO) <= 0) {
+        break;
+      }
+      int restantes = ordenados.size() - i;
+      BigDecimal tomar = restantes == 1
+          ? restante
+          : restante.divide(BigDecimal.valueOf(restantes), 4, RoundingMode.HALF_UP);
+      if (tomar.compareTo(BigDecimal.ZERO) <= 0) {
+        continue;
+      }
+      Inventario inventario = ordenados.get(i);
+      Inventario actualizado = inventario
+          .withStockActual(inventario.stockActual().add(tomar))
+          .withStockReservado(inventario.stockReservado().add(tomar))
+          .withActualizadoEn(ahora);
+      inventarioRepository.save(actualizado);
+      restante = restante.subtract(tomar);
+    }
+  }
+
+  private void restaurarSinReserva(List<Inventario> inventarios, BigDecimal cantidad, LocalDateTime ahora) {
+    BigDecimal restante = cantidad;
+    List<Inventario> ordenados = inventarios.stream()
+        .sorted((a, b) -> {
+          BigDecimal disponibleA = a.stockActual().subtract(a.stockReservado());
+          BigDecimal disponibleB = b.stockActual().subtract(b.stockReservado());
+          return disponibleB.compareTo(disponibleA);
+        })
+        .toList();
+    for (int i = 0; i < ordenados.size(); i++) {
+      if (restante.compareTo(BigDecimal.ZERO) <= 0) {
+        break;
+      }
+      int restantes = ordenados.size() - i;
+      BigDecimal tomar = restantes == 1
+          ? restante
+          : restante.divide(BigDecimal.valueOf(restantes), 4, RoundingMode.HALF_UP);
+      if (tomar.compareTo(BigDecimal.ZERO) <= 0) {
+        continue;
+      }
+      Inventario inventario = ordenados.get(i);
+      Inventario actualizado = inventario
+          .withStockActual(inventario.stockActual().add(tomar))
+          .withActualizadoEn(ahora);
+      inventarioRepository.save(actualizado);
+      restante = restante.subtract(tomar);
+    }
+  }
+
+  private void descontarConReserva(List<Inventario> inventarios, BigDecimal cantidad, LocalDateTime ahora) {
+    BigDecimal restante = cantidad;
+    List<Inventario> ordenados = inventarios.stream()
+        .sorted((a, b) -> b.stockReservado().compareTo(a.stockReservado()))
+        .toList();
+    for (Inventario inventario : ordenados) {
+      if (restante.compareTo(BigDecimal.ZERO) <= 0) {
+        break;
+      }
+      BigDecimal reservado = inventario.stockReservado();
+      if (reservado.compareTo(BigDecimal.ZERO) <= 0) {
+        continue;
+      }
+      BigDecimal tomar = reservado.min(restante);
+      Inventario actualizado = inventario
+          .withStockActual(inventario.stockActual().subtract(tomar))
+          .withStockReservado(inventario.stockReservado().subtract(tomar))
+          .withActualizadoEn(ahora);
+      inventarioRepository.save(actualizado);
+      restante = restante.subtract(tomar);
+    }
+    if (restante.compareTo(BigDecimal.ZERO) > 0) {
+      throw new BusinessRuleException("No se pudo descontar todo el stock reservado");
+    }
+  }
+
+  private void descontarSinReserva(List<Inventario> inventarios, BigDecimal cantidad, LocalDateTime ahora) {
+    BigDecimal restante = cantidad;
+    List<Inventario> ordenados = inventarios.stream()
+        .sorted((a, b) -> {
+          BigDecimal disponibleA = a.stockActual().subtract(a.stockReservado());
+          BigDecimal disponibleB = b.stockActual().subtract(b.stockReservado());
+          return disponibleB.compareTo(disponibleA);
+        })
+        .toList();
+    for (Inventario inventario : ordenados) {
+      if (restante.compareTo(BigDecimal.ZERO) <= 0) {
+        break;
+      }
+      BigDecimal disponible = inventario.stockActual().subtract(inventario.stockReservado());
+      if (disponible.compareTo(BigDecimal.ZERO) <= 0) {
+        continue;
+      }
+      BigDecimal tomar = disponible.min(restante);
+      Inventario actualizado = inventario
+          .withStockActual(inventario.stockActual().subtract(tomar))
+          .withActualizadoEn(ahora);
+      inventarioRepository.save(actualizado);
+      restante = restante.subtract(tomar);
+    }
+    if (restante.compareTo(BigDecimal.ZERO) > 0) {
+      throw new BusinessRuleException("No se pudo descontar todo el stock disponible");
     }
   }
 

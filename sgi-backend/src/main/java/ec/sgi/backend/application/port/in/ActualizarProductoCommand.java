@@ -9,6 +9,7 @@ public record ActualizarProductoCommand(
     BigDecimal precioUnitario,
     Long categoriaId,
     Long impuestoId,
+    Boolean vendible,
     String codigoBarras
 ) {
   public ActualizarProductoCommand {

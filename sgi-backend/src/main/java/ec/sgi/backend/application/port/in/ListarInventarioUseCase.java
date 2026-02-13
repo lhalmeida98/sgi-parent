@@ -1,8 +1,8 @@
 package ec.sgi.backend.application.port.in;
 
-import ec.sgi.backend.application.dto.InventarioResult;
+import ec.sgi.backend.application.dto.InventarioResumenResult;
 import java.util.List;
 
 public interface ListarInventarioUseCase {
-  List<InventarioResult> listar(Long empresaId);
+  List<InventarioResumenResult> listar(Long empresaId);
 }
