@@ -14,9 +14,12 @@ public class AccionEntity {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  private Long empresaId;
+  private String nombre;
   private String codigo;
   private String descripcion;
+  private String url;
+  private String icono;
+  private String tipo;
   private Boolean activo;
   private LocalDateTime creadoEn;
   private LocalDateTime actualizadoEn;
@@ -32,12 +35,12 @@ public class AccionEntity {
     this.id = id;
   }
 
-  public Long getEmpresaId() {
-    return empresaId;
+  public String getNombre() {
+    return nombre;
   }
 
-  public void setEmpresaId(Long empresaId) {
-    this.empresaId = empresaId;
+  public void setNombre(String nombre) {
+    this.nombre = nombre;
   }
 
   public String getCodigo() {
@@ -54,6 +57,30 @@ public class AccionEntity {
 
   public void setDescripcion(String descripcion) {
     this.descripcion = descripcion;
+  }
+
+  public String getUrl() {
+    return url;
+  }
+
+  public void setUrl(String url) {
+    this.url = url;
+  }
+
+  public String getIcono() {
+    return icono;
+  }
+
+  public void setIcono(String icono) {
+    this.icono = icono;
+  }
+
+  public String getTipo() {
+    return tipo;
+  }
+
+  public void setTipo(String tipo) {
+    this.tipo = tipo;
   }
 
   public Boolean getActivo() {

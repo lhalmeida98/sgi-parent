@@ -28,7 +28,7 @@ public class JwtService {
     return Jwts.builder()
         .subject(principal.getUsername())
         .claim("empresaId", principal.getEmpresaId())
-        .claim("rol", principal.getRol())
+        .claim("roles", principal.getRoles())
         .issuedAt(Date.from(now))
         .expiration(Date.from(expiresAt))
         .signWith(Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8)))

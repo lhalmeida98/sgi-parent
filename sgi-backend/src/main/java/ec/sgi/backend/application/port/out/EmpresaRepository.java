@@ -11,5 +11,7 @@ public interface EmpresaRepository {
 
   Optional<Empresa> findByIdForUpdate(Long id);
 
+  List<Empresa> findByIds(List<Long> ids);
+
   List<Empresa> findAll();
 }

@@ -8,7 +8,6 @@ import ec.sgi.backend.application.port.in.CrearClienteUseCase;
 import ec.sgi.backend.application.port.in.ListarClientesUseCase;
 import ec.sgi.backend.security.CurrentUserService;
 import ec.sgi.backend.security.PermisoService;
-import ec.sgi.backend.security.Permisos;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -55,7 +54,7 @@ public class ClienteController {
       @ApiResponse(responseCode = "403", description = "Sin permisos")
   })
   public ResponseEntity<ClienteCreateResult> crear(@Valid @RequestBody ClienteCreateRequest request) {
-    permisoService.requirePermiso(Permisos.CLIENTE_GESTION);
+    permisoService.requirePermiso("CLIENTES");
     Long empresaId = currentUserService.getEmpresaId();
     ClienteCreateResult result = crearClienteUseCase.crear(new CrearClienteCommand(
         empresaId,
@@ -77,7 +76,7 @@ public class ClienteController {
       @ApiResponse(responseCode = "403", description = "Sin permisos")
   })
   public ResponseEntity<List<ClienteResult>> listar() {
-    permisoService.requirePermiso(Permisos.CLIENTE_GESTION);
+    permisoService.requirePermiso("CLIENTES");
     return ResponseEntity.ok(listarClientesUseCase.listar(currentUserService.getEmpresaId()));
   }
 }

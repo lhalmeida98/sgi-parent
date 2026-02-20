@@ -4,5 +4,5 @@ import ec.sgi.backend.application.dto.AccionResult;
 import java.util.List;
 
 public interface ListarAccionesUseCase {
-  List<AccionResult> listar(Long empresaId);
+  List<AccionResult> listar();
 }

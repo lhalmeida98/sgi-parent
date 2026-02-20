@@ -11,7 +11,6 @@ import ec.sgi.backend.application.port.in.CrearCategoriaUseCase;
 import ec.sgi.backend.application.port.in.ListarCategoriasUseCase;
 import ec.sgi.backend.security.CurrentUserService;
 import ec.sgi.backend.security.PermisoService;
-import ec.sgi.backend.security.Permisos;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -64,7 +63,7 @@ public class CategoriaController {
       @ApiResponse(responseCode = "403", description = "Sin permisos")
   })
   public ResponseEntity<CategoriaCreateResult> crear(@Valid @RequestBody CategoriaCreateRequest request) {
-    permisoService.requirePermiso(Permisos.CATEGORIA_GESTION);
+    permisoService.requirePermiso("CATEGORIAS");
     Long empresaId = currentUserService.getEmpresaId();
     CategoriaCreateResult result = crearCategoriaUseCase.crear(new CrearCategoriaCommand(
         empresaId,
@@ -83,7 +82,7 @@ public class CategoriaController {
       @ApiResponse(responseCode = "403", description = "Sin permisos")
   })
   public ResponseEntity<List<CategoriaResult>> listar() {
-    permisoService.requirePermiso(Permisos.CATEGORIA_GESTION);
+    permisoService.requireAnyPermiso("CATEGORIAS", "PRODUCTOS");
     return ResponseEntity.ok(listarCategoriasUseCase.listar(currentUserService.getEmpresaId()));
   }
 
@@ -101,7 +100,7 @@ public class CategoriaController {
       @Parameter(description = "ID de la categoria") @PathVariable Long categoriaId,
       @Valid @RequestBody CategoriaUpdateRequest request
   ) {
-    permisoService.requirePermiso(Permisos.CATEGORIA_GESTION);
+    permisoService.requirePermiso("CATEGORIAS");
     CategoriaResult result = actualizarCategoriaUseCase.actualizar(
         currentUserService.getEmpresaId(),
         categoriaId,

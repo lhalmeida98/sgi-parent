@@ -4,6 +4,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Column;
 import jakarta.persistence.Table;
 
 @Entity
@@ -14,7 +15,8 @@ public class RolPermisoEntity {
   private Long id;
 
   private Long rolId;
-  private String accion;
+  @Column(name = "accion_id")
+  private Long accionId;
 
   public RolPermisoEntity() {
   }
@@ -35,11 +37,11 @@ public class RolPermisoEntity {
     this.rolId = rolId;
   }
 
-  public String getAccion() {
-    return accion;
+  public Long getAccionId() {
+    return accionId;
   }
 
-  public void setAccion(String accion) {
-    this.accion = accion;
+  public void setAccionId(Long accionId) {
+    this.accionId = accionId;
   }
 }

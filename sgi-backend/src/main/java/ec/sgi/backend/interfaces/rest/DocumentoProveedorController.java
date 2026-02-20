@@ -16,7 +16,6 @@ import ec.sgi.backend.application.port.in.DocumentoProveedorItemCommand;
 import ec.sgi.backend.application.port.in.ListarDocumentosProveedorUseCase;
 import ec.sgi.backend.security.CurrentUserService;
 import ec.sgi.backend.security.PermisoService;
-import ec.sgi.backend.security.Permisos;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -78,7 +77,7 @@ public class DocumentoProveedorController {
   public ResponseEntity<List<DocumentoProveedorResult>> listar(
       @Parameter(description = "ID del proveedor") @RequestParam(required = false) Long proveedorId
   ) {
-    permisoService.requirePermiso(Permisos.CXP_GESTION);
+    permisoService.requirePermiso("PROVEEDORES");
     Long empresaId = currentUserService.getEmpresaId();
     return ResponseEntity.ok(listarDocumentosProveedorUseCase.listar(empresaId, proveedorId));
   }
@@ -95,7 +94,7 @@ public class DocumentoProveedorController {
   public ResponseEntity<List<DocumentoProveedorResult>> listarPorProveedor(
       @Parameter(description = "ID del proveedor") @PathVariable Long proveedorId
   ) {
-    permisoService.requirePermiso(Permisos.CXP_GESTION);
+    permisoService.requirePermiso("PROVEEDORES");
     Long empresaId = currentUserService.getEmpresaId();
     return ResponseEntity.ok(listarDocumentosProveedorUseCase.listar(empresaId, proveedorId));
   }
@@ -115,7 +114,7 @@ public class DocumentoProveedorController {
       @Parameter(description = "ID del proveedor") @PathVariable Long proveedorId,
       @Valid @RequestBody DocumentoProveedorCreateRequest request
   ) {
-    permisoService.requirePermiso(Permisos.CXP_GESTION);
+    permisoService.requirePermiso("PROVEEDORES");
     Long empresaId = currentUserService.getEmpresaId();
     DocumentoProveedorResult result = crearDocumentoProveedorUseCase.crear(new CrearDocumentoProveedorCommand(
         empresaId,
@@ -149,7 +148,7 @@ public class DocumentoProveedorController {
       @Parameter(description = "ID del proveedor") @PathVariable Long proveedorId,
       @Valid @RequestBody DocumentoProveedorCreateRequest request
   ) {
-    permisoService.requirePermiso(Permisos.CXP_GESTION);
+    permisoService.requirePermiso("PROVEEDORES");
     Long empresaId = currentUserService.getEmpresaId();
     DocumentoProveedorResult result = crearDocumentoProveedorUseCase.crear(new CrearDocumentoProveedorCommand(
         empresaId,
@@ -183,7 +182,7 @@ public class DocumentoProveedorController {
       @Parameter(description = "Archivo XML") @RequestParam("archivo") MultipartFile archivo,
       @Parameter(description = "ID de la bodega") @RequestParam(value = "bodegaId", required = false) Long bodegaId
   ) {
-    permisoService.requirePermiso(Permisos.CXP_GESTION);
+    permisoService.requirePermiso("PROVEEDORES");
     String xml;
     try {
       xml = new String(archivo.getBytes(), StandardCharsets.UTF_8);
@@ -216,7 +215,7 @@ public class DocumentoProveedorController {
       @Parameter(description = "ID de la bodega") @RequestParam(value = "bodegaId", required = false) Long bodegaId,
       @Valid @RequestBody DocumentoProveedorAutorizacionRequest request
   ) {
-    permisoService.requirePermiso(Permisos.CXP_GESTION);
+    permisoService.requirePermiso("PROVEEDORES");
     DocumentoProveedorPreviewResult result = crearDocumentoProveedorAutorizacionUseCase.crearDesdeAutorizacion(
         new CrearDocumentoProveedorAutorizacionCommand(
             currentUserService.getEmpresaId(),

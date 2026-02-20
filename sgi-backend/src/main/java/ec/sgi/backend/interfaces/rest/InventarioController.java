@@ -14,7 +14,6 @@ import ec.sgi.backend.application.port.in.ListarInventarioUseCase;
 import ec.sgi.backend.application.port.in.ListarProductosDisponiblesPorBodegaUseCase;
 import ec.sgi.backend.security.CurrentUserService;
 import ec.sgi.backend.security.PermisoService;
-import ec.sgi.backend.security.Permisos;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -76,7 +75,7 @@ public class InventarioController {
       @ApiResponse(responseCode = "403", description = "Sin permisos")
   })
   public ResponseEntity<InventarioCreateResult> crear(@Valid @RequestBody InventarioCreateRequest request) {
-    permisoService.requirePermiso(Permisos.INVENTARIO_GESTION);
+    permisoService.requirePermiso("INVENTARIOS");
     Long empresaId = currentUserService.getEmpresaId();
     InventarioCreateResult result = crearInventarioUseCase.crear(new CrearInventarioCommand(
         empresaId,
@@ -100,7 +99,7 @@ public class InventarioController {
       @ApiResponse(responseCode = "403", description = "Sin permisos")
   })
   public ResponseEntity<List<InventarioResumenResult>> listar() {
-    permisoService.requirePermiso(Permisos.INVENTARIO_GESTION);
+    permisoService.requirePermiso("INVENTARIOS");
     return ResponseEntity.ok(listarInventarioUseCase.listar(currentUserService.getEmpresaId()));
   }
 
@@ -117,7 +116,7 @@ public class InventarioController {
       @Parameter(description = "ID del producto") @PathVariable Long productoId,
       @Parameter(description = "ID de la bodega") @PathVariable Long bodegaId
   ) {
-    permisoService.requirePermiso(Permisos.INVENTARIO_GESTION);
+    permisoService.requirePermiso("INVENTARIOS");
     Long empresaId = currentUserService.getEmpresaId();
     return ResponseEntity.ok(consultarInventarioProductoBodegaUseCase.consultar(empresaId, productoId, bodegaId));
   }
@@ -137,7 +136,7 @@ public class InventarioController {
   public ResponseEntity<List<InventarioProductoDisponibleResult>> listarDisponibles(
       @Parameter(description = "ID de la bodega") @PathVariable Long bodegaId
   ) {
-    permisoService.requirePermiso(Permisos.INVENTARIO_GESTION);
+    permisoService.requirePermiso("INVENTARIOS");
     Long empresaId = currentUserService.getEmpresaId();
     return ResponseEntity.ok(listarProductosDisponiblesPorBodegaUseCase.listar(empresaId, bodegaId));
   }
@@ -159,7 +158,7 @@ public class InventarioController {
       @Parameter(description = "ID de la bodega") @PathVariable Long bodegaId,
       @Parameter(description = "Codigo o codigo de barras") @RequestParam("codigo") String codigo
   ) {
-    permisoService.requirePermiso(Permisos.INVENTARIO_GESTION);
+    permisoService.requirePermiso("INVENTARIOS");
     Long empresaId = currentUserService.getEmpresaId();
     return ResponseEntity.ok(buscarProductoDisponiblePorBodegaUseCase.buscar(empresaId, bodegaId, codigo));
   }
@@ -180,7 +179,7 @@ public class InventarioController {
       @Parameter(description = "ID de la bodega") @PathVariable Long bodegaId,
       @Parameter(description = "ID del producto") @PathVariable Long productoId
   ) {
-    permisoService.requirePermiso(Permisos.INVENTARIO_GESTION);
+    permisoService.requirePermiso("INVENTARIOS");
     Long empresaId = currentUserService.getEmpresaId();
     return ResponseEntity.ok(buscarProductoDisponiblePorIdUseCase.buscar(empresaId, bodegaId, productoId));
   }

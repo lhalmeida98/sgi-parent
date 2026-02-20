@@ -13,16 +13,16 @@ public class UsuarioPrincipal implements UserDetails {
   private final String nombre;
   private final String email;
   private final String passwordHash;
-  private final String rol;
+  private final List<String> roles;
   private final boolean activo;
 
-  public UsuarioPrincipal(UsuarioEntity entity) {
+  public UsuarioPrincipal(UsuarioEntity entity, List<String> roles) {
     this.id = entity.getId();
     this.empresaId = entity.getEmpresaId();
     this.nombre = entity.getNombre();
     this.email = entity.getEmail();
     this.passwordHash = entity.getPasswordHash();
-    this.rol = entity.getRol();
+    this.roles = roles == null ? List.of() : roles;
     this.activo = entity.getActivo() == null || entity.getActivo();
   }
 
@@ -38,14 +38,19 @@ public class UsuarioPrincipal implements UserDetails {
     return nombre;
   }
 
-  public String getRol() {
-    return rol;
+  public List<String> getRoles() {
+    return roles;
   }
 
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
-    String roleName = rol == null ? "USER" : rol;
-    return List.of(new SimpleGrantedAuthority("ROLE_" + roleName));
+    if (roles == null || roles.isEmpty()) {
+      return List.of(new SimpleGrantedAuthority("ROLE_USER"));
+    }
+    return roles.stream()
+        .filter(role -> role != null && !role.isBlank())
+        .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+        .toList();
   }
 
   @Override

@@ -22,18 +22,33 @@ public class PermisoService {
   }
 
   public void requirePermiso(String permiso) {
-    String rol = currentUserService.getRol();
-    if (rol != null && rol.equalsIgnoreCase("ADMIN")) {
+    requireAnyPermiso(permiso);
+  }
+
+  public void requireAnyPermiso(String... permisos) {
+    java.util.List<String> roles = currentUserService.getRoles();
+    if (roles != null && roles.stream().anyMatch(role -> role != null && role.equalsIgnoreCase("ADMIN"))) {
       return;
     }
-    if (rol == null || rol.isBlank()) {
+    if (roles == null || roles.isEmpty()) {
       throw new ForbiddenException("No tiene permisos para acceder a este recurso");
     }
-    Long empresaId = currentUserService.getEmpresaId();
-    if (!accionRepository.existsActiveByCodigo(empresaId, permiso)) {
+    java.util.List<String> solicitados = java.util.Arrays.stream(permisos)
+        .filter(p -> p != null && !p.isBlank())
+        .toList();
+    if (solicitados.isEmpty()) {
       throw new ForbiddenException("No tiene permisos para acceder a este recurso");
     }
-    if (!rolRepository.existsPermiso(empresaId, rol, permiso)) {
+    boolean existePermisoActivo = solicitados.stream()
+        .anyMatch(accionRepository::existsActiveByCodigo);
+    if (!existePermisoActivo) {
+      throw new ForbiddenException("No tiene permisos para acceder a este recurso");
+    }
+    java.util.List<String> permisosAsignados = rolRepository.findPermisosByRoles(roles);
+    boolean autorizado = permisosAsignados.stream()
+        .filter(codigo -> codigo != null && !codigo.isBlank())
+        .anyMatch(codigo -> solicitados.stream().anyMatch(req -> req.equalsIgnoreCase(codigo)));
+    if (!autorizado) {
       throw new ForbiddenException("No tiene permisos para acceder a este recurso");
     }
   }

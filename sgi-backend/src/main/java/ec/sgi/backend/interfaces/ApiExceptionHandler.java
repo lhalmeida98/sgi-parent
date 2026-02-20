@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -46,6 +47,11 @@ public class ApiExceptionHandler {
     FieldError fieldError = ex.getBindingResult().getFieldErrors().stream().findFirst().orElse(null);
     String message = fieldError == null ? "Validacion invalida" : fieldError.getField() + ": " + fieldError.getDefaultMessage();
     return buildError(HttpStatus.BAD_REQUEST, message, request.getRequestURI());
+  }
+
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ResponseEntity<ApiError> handleNotReadable(HttpMessageNotReadableException ex, HttpServletRequest request) {
+    return buildError(HttpStatus.BAD_REQUEST, "Payload invalido", request.getRequestURI());
   }
 
   @ExceptionHandler(Exception.class)

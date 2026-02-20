@@ -4,7 +4,6 @@ import ec.sgi.backend.application.dto.CuentaPorPagarResult;
 import ec.sgi.backend.application.port.in.ListarCuentasPorPagarUseCase;
 import ec.sgi.backend.security.CurrentUserService;
 import ec.sgi.backend.security.PermisoService;
-import ec.sgi.backend.security.Permisos;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -48,7 +47,7 @@ public class CuentaPorPagarController {
   public ResponseEntity<List<CuentaPorPagarResult>> listar(
       @Parameter(description = "ID del proveedor") @RequestParam(required = false) Long proveedorId
   ) {
-    permisoService.requirePermiso(Permisos.CXP_GESTION);
+    permisoService.requirePermiso("PROVEEDORES");
     Long empresaId = currentUserService.getEmpresaId();
     return ResponseEntity.ok(listarCuentasPorPagarUseCase.listar(empresaId, proveedorId));
   }

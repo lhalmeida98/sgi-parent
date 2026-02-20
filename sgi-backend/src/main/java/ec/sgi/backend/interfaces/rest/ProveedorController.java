@@ -14,7 +14,6 @@ import ec.sgi.backend.application.port.in.EliminarProveedorUseCase;
 import ec.sgi.backend.application.port.in.ListarProveedoresUseCase;
 import ec.sgi.backend.security.CurrentUserService;
 import ec.sgi.backend.security.PermisoService;
-import ec.sgi.backend.security.Permisos;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -75,7 +74,7 @@ public class ProveedorController {
       @ApiResponse(responseCode = "403", description = "Sin permisos")
   })
   public ResponseEntity<ProveedorCreateResult> crear(@Valid @RequestBody ProveedorCreateRequest request) {
-    permisoService.requirePermiso(Permisos.PROVEEDOR_GESTION);
+    permisoService.requirePermiso("PROVEEDORES");
     Long empresaId = currentUserService.getEmpresaId();
     ProveedorCreateResult result = crearProveedorUseCase.crear(new CrearProveedorCommand(
         empresaId,
@@ -101,7 +100,7 @@ public class ProveedorController {
       @ApiResponse(responseCode = "403", description = "Sin permisos")
   })
   public ResponseEntity<List<ProveedorResult>> listar() {
-    permisoService.requirePermiso(Permisos.PROVEEDOR_GESTION);
+    permisoService.requirePermiso("PROVEEDORES");
     return ResponseEntity.ok(listarProveedoresUseCase.listar(currentUserService.getEmpresaId()));
   }
 
@@ -117,7 +116,7 @@ public class ProveedorController {
   public ResponseEntity<ProveedorSriConsultaResult> consultarSri(
       @Parameter(description = "Numero de identificacion (RUC/Cedula)") @RequestParam String identificacion
   ) {
-    permisoService.requirePermiso(Permisos.PROVEEDOR_GESTION);
+    permisoService.requirePermiso("PROVEEDORES");
     ProveedorSriConsultaResult result = consultarProveedorSriUseCase.consultar(identificacion);
     if (!result.encontrado() && "Identificacion requerida".equalsIgnoreCase(result.mensaje())) {
       return ResponseEntity.badRequest().body(result);
@@ -139,7 +138,7 @@ public class ProveedorController {
       @Parameter(description = "ID del proveedor") @PathVariable Long proveedorId,
       @Valid @RequestBody ProveedorUpdateRequest request
   ) {
-    permisoService.requirePermiso(Permisos.PROVEEDOR_GESTION);
+    permisoService.requirePermiso("PROVEEDORES");
     ProveedorResult result = actualizarProveedorUseCase.actualizar(
         currentUserService.getEmpresaId(),
         proveedorId,
@@ -168,7 +167,7 @@ public class ProveedorController {
   public ResponseEntity<Void> eliminar(
       @Parameter(description = "ID del proveedor") @PathVariable Long proveedorId
   ) {
-    permisoService.requirePermiso(Permisos.PROVEEDOR_GESTION);
+    permisoService.requirePermiso("PROVEEDORES");
     eliminarProveedorUseCase.eliminar(currentUserService.getEmpresaId(), proveedorId);
     return ResponseEntity.noContent().build();
   }

@@ -1,18 +1,20 @@
 package ec.sgi.backend.domain.model;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
 public record Rol(
     Long id,
-    Long empresaId,
     String nombre,
     String descripcion,
-    List<String> permisos
+    boolean activo,
+    LocalDateTime creadoEn,
+    LocalDateTime actualizadoEn,
+    List<Long> accionesIds
 ) {
   public Rol {
-    Objects.requireNonNull(empresaId, "empresaId");
     Objects.requireNonNull(nombre, "nombre");
-    Objects.requireNonNull(permisos, "permisos");
+    Objects.requireNonNull(accionesIds, "accionesIds");
   }
 }

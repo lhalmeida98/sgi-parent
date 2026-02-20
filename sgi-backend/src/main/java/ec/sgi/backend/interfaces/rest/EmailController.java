@@ -4,7 +4,6 @@ import ec.sgi.backend.application.dto.EnviarFacturaEmailRequest;
 import ec.sgi.backend.application.usecase.EnviarFacturaPorEmailUseCase;
 import ec.sgi.backend.security.CurrentUserService;
 import ec.sgi.backend.security.PermisoService;
-import ec.sgi.backend.security.Permisos;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -48,7 +47,7 @@ public class EmailController {
       @ApiResponse(responseCode = "502", description = "Error enviando correo")
   })
   public ResponseEntity<Void> enviarFactura(@Valid @RequestBody EnviarFacturaEmailRequest request) {
-    permisoService.requirePermiso(Permisos.FACTURA_GESTION);
+    permisoService.requirePermiso("FACTURACION");
     Long empresaId = currentUserService.getEmpresaId();
     enviarFacturaPorEmailUseCase.execute(
         request.facturaId(),

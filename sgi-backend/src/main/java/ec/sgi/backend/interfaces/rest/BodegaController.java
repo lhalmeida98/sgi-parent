@@ -8,7 +8,6 @@ import ec.sgi.backend.application.port.in.CrearBodegaUseCase;
 import ec.sgi.backend.application.port.in.ListarBodegasUseCase;
 import ec.sgi.backend.security.CurrentUserService;
 import ec.sgi.backend.security.PermisoService;
-import ec.sgi.backend.security.Permisos;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -55,7 +54,7 @@ public class BodegaController {
       @ApiResponse(responseCode = "403", description = "Sin permisos")
   })
   public ResponseEntity<BodegaCreateResult> crear(@Valid @RequestBody BodegaCreateRequest request) {
-    permisoService.requirePermiso(Permisos.BODEGA_GESTION);
+    permisoService.requirePermiso("BODEGAS");
     Long empresaId = currentUserService.getEmpresaId();
     BodegaCreateResult result = crearBodegaUseCase.crear(new CrearBodegaCommand(
         empresaId,
@@ -76,7 +75,7 @@ public class BodegaController {
       @ApiResponse(responseCode = "403", description = "Sin permisos")
   })
   public ResponseEntity<List<BodegaResult>> listar() {
-    permisoService.requirePermiso(Permisos.BODEGA_GESTION);
+    permisoService.requirePermiso("BODEGAS");
     return ResponseEntity.ok(listarBodegasUseCase.listar(currentUserService.getEmpresaId()));
   }
 }

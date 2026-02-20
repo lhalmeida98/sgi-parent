@@ -7,6 +7,7 @@ import java.util.List;
 public record RolCreateRequest(
     @NotBlank String nombre,
     String descripcion,
-    @NotNull List<String> permisos
+    @NotNull List<Long> accionesIds,
+    Boolean activo
 ) {
 }

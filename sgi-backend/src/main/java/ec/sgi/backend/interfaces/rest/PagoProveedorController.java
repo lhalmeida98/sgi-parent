@@ -9,7 +9,6 @@ import ec.sgi.backend.application.port.in.ListarPagosProveedorUseCase;
 import ec.sgi.backend.application.port.in.PagoProveedorDetalleCommand;
 import ec.sgi.backend.security.CurrentUserService;
 import ec.sgi.backend.security.PermisoService;
-import ec.sgi.backend.security.Permisos;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -60,7 +59,7 @@ public class PagoProveedorController {
       @ApiResponse(responseCode = "404", description = "Proveedor o cuenta no encontrada")
   })
   public ResponseEntity<PagoProveedorResult> crear(@Valid @RequestBody PagoProveedorCreateRequest request) {
-    permisoService.requirePermiso(Permisos.PAGO_PROVEEDOR_GESTION);
+    permisoService.requirePermiso("PROVEEDORES");
     Long empresaId = currentUserService.getEmpresaId();
     PagoProveedorResult result = crearPagoProveedorUseCase.crear(new CrearPagoProveedorCommand(
         empresaId,
@@ -86,7 +85,7 @@ public class PagoProveedorController {
   public ResponseEntity<List<PagoProveedorResult>> listar(
       @Parameter(description = "ID del proveedor") @RequestParam(required = false) Long proveedorId
   ) {
-    permisoService.requirePermiso(Permisos.PAGO_PROVEEDOR_GESTION);
+    permisoService.requirePermiso("PROVEEDORES");
     Long empresaId = currentUserService.getEmpresaId();
     return ResponseEntity.ok(listarPagosProveedorUseCase.listar(empresaId, proveedorId));
   }

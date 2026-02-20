@@ -19,7 +19,6 @@ import ec.sgi.backend.application.port.in.ReenviarFacturasEnProcesoUseCase;
 import ec.sgi.backend.application.port.in.ReenviarFacturaEnProcesoUseCase;
 import ec.sgi.backend.security.CurrentUserService;
 import ec.sgi.backend.security.PermisoService;
-import ec.sgi.backend.security.Permisos;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -97,7 +96,7 @@ public class FacturaController {
       @ApiResponse(responseCode = "502", description = "Error SRI")
   })
   public ResponseEntity<FacturaCreateResult> crear(@Valid @RequestBody FacturaCreateRequest request) {
-    permisoService.requirePermiso(Permisos.FACTURA_GESTION);
+    permisoService.requirePermiso("FACTURACION");
     Long empresaId = currentUserService.getEmpresaId();
     if (!empresaId.equals(request.empresaId())) {
       return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
@@ -118,7 +117,7 @@ public class FacturaController {
   })
   public ResponseEntity<FacturaEstadoResult> consultarEstado(
       @Parameter(description = "Numero de factura (estab-ptoEmi-secuencial)") @PathVariable String numeroFactura) {
-    permisoService.requirePermiso(Permisos.FACTURA_GESTION);
+    permisoService.requirePermiso("FACTURACION");
     Long empresaId = currentUserService.getEmpresaId();
     FacturaEstadoResult result = consultarEstadoFacturaUseCase.consultar(
         new ConsultarEstadoFacturaCommand(empresaId, numeroFactura)
@@ -138,7 +137,7 @@ public class FacturaController {
   })
   public ResponseEntity<FacturaProcesoResult> consultarEnProceso(
       @Parameter(description = "ID de la factura") @PathVariable Long facturaId) {
-    permisoService.requirePermiso(Permisos.FACTURA_GESTION);
+    permisoService.requirePermiso("FACTURACION");
     return ResponseEntity.ok(consultarFacturaEnProcesoUseCase.consultarEnProceso(facturaId));
   }
 
@@ -152,7 +151,7 @@ public class FacturaController {
   })
   public ResponseEntity<List<FacturaProcesoResult>> listarEnProceso(
       @Parameter(description = "ID de la empresa") @PathVariable Long empresaId) {
-    permisoService.requirePermiso(Permisos.FACTURA_GESTION);
+    permisoService.requirePermiso("FACTURACION");
     Long empresaActual = currentUserService.getEmpresaId();
     if (!empresaActual.equals(empresaId)) {
       return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
@@ -177,7 +176,7 @@ public class FacturaController {
       @Parameter(description = "Pagina (0-based)") @RequestParam(value = "page", required = false, defaultValue = "0") int page,
       @Parameter(description = "Tamano de pagina") @RequestParam(value = "size", required = false, defaultValue = "20") int size
   ) {
-    permisoService.requirePermiso(Permisos.FACTURA_GESTION);
+    permisoService.requirePermiso("FACTURACION");
     Long empresaActual = currentUserService.getEmpresaId();
     if (!empresaActual.equals(empresaId)) {
       return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
@@ -197,7 +196,7 @@ public class FacturaController {
   })
   public ResponseEntity<List<FacturaProcesoResult>> reenviarEnProceso(
       @Parameter(description = "ID de la empresa") @PathVariable Long empresaId) {
-    permisoService.requirePermiso(Permisos.FACTURA_GESTION);
+    permisoService.requirePermiso("FACTURACION");
     Long empresaActual = currentUserService.getEmpresaId();
     if (!empresaActual.equals(empresaId)) {
       return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
@@ -217,7 +216,7 @@ public class FacturaController {
   })
   public ResponseEntity<FacturaProcesoResult> reenviarFactura(
       @Parameter(description = "ID de la factura") @PathVariable Long facturaId) {
-    permisoService.requirePermiso(Permisos.FACTURA_GESTION);
+    permisoService.requirePermiso("FACTURACION");
     Long empresaId = currentUserService.getEmpresaId();
     return ResponseEntity.ok(reenviarFacturaEnProcesoUseCase.reenviarEnProceso(facturaId, empresaId));
   }
@@ -233,7 +232,7 @@ public class FacturaController {
   })
   public ResponseEntity<byte[]> generarPdf(
       @Parameter(description = "ID de la factura") @PathVariable Long facturaId) {
-    permisoService.requirePermiso(Permisos.FACTURA_GESTION);
+    permisoService.requirePermiso("FACTURACION");
     Long empresaId = currentUserService.getEmpresaId();
     byte[] pdf = generarFacturaPdfUseCase.generar(new GenerarFacturaPdfCommand(facturaId, empresaId));
     return ResponseEntity.ok()
@@ -253,7 +252,7 @@ public class FacturaController {
   })
   public ResponseEntity<byte[]> descargarXml(
       @Parameter(description = "ID de la factura") @PathVariable Long facturaId) {
-    permisoService.requirePermiso(Permisos.FACTURA_GESTION);
+    permisoService.requirePermiso("FACTURACION");
     Long empresaId = currentUserService.getEmpresaId();
     String xml = obtenerFacturaXmlUseCase.obtenerXml(facturaId, empresaId);
     return ResponseEntity.ok()

@@ -19,7 +19,6 @@ public class UsuarioEntity {
   private String usuario;
   private String email;
   private String passwordHash;
-  private String rol;
   private Boolean activo;
   private LocalDateTime creadoEn;
   private LocalDateTime actualizadoEn;
@@ -73,14 +72,6 @@ public class UsuarioEntity {
 
   public void setPasswordHash(String passwordHash) {
     this.passwordHash = passwordHash;
-  }
-
-  public String getRol() {
-    return rol;
-  }
-
-  public void setRol(String rol) {
-    this.rol = rol;
   }
 
   public Boolean getActivo() {

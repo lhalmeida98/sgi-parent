@@ -11,9 +11,14 @@ public class CurrentUserService {
     return principal.getEmpresaId();
   }
 
-  public String getRol() {
+  public java.util.List<String> getRoles() {
     UsuarioPrincipal principal = getPrincipal();
-    return principal.getRol();
+    return principal.getRoles();
+  }
+
+  public boolean isAdmin() {
+    java.util.List<String> roles = getRoles();
+    return roles != null && roles.stream().anyMatch(role -> role != null && role.equalsIgnoreCase("ADMIN"));
   }
 
   private UsuarioPrincipal getPrincipal() {

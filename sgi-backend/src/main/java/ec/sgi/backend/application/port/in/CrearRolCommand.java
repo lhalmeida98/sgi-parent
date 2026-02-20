@@ -4,14 +4,13 @@ import java.util.List;
 import java.util.Objects;
 
 public record CrearRolCommand(
-    Long empresaId,
     String nombre,
     String descripcion,
-    List<String> permisos
+    List<Long> accionesIds,
+    Boolean activo
 ) {
   public CrearRolCommand {
-    Objects.requireNonNull(empresaId, "empresaId");
     Objects.requireNonNull(nombre, "nombre");
-    Objects.requireNonNull(permisos, "permisos");
+    Objects.requireNonNull(accionesIds, "accionesIds");
   }
 }

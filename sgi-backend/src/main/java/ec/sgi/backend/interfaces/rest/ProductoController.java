@@ -14,7 +14,6 @@ import ec.sgi.backend.application.port.in.CrearProductoUseCase;
 import ec.sgi.backend.application.port.in.ListarProductosUseCase;
 import ec.sgi.backend.security.CurrentUserService;
 import ec.sgi.backend.security.PermisoService;
-import ec.sgi.backend.security.Permisos;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -74,7 +73,7 @@ public class ProductoController {
       @ApiResponse(responseCode = "403", description = "Sin permisos")
   })
   public ResponseEntity<ProductoCreateResult> crear(@Valid @RequestBody ProductoCreateRequest request) {
-    permisoService.requirePermiso(Permisos.PRODUCTO_GESTION);
+    permisoService.requirePermiso("PRODUCTOS");
     Long empresaId = currentUserService.getEmpresaId();
     ProductoCreateResult result = crearProductoUseCase.crear(new CrearProductoCommand(
         empresaId,
@@ -98,7 +97,7 @@ public class ProductoController {
       @ApiResponse(responseCode = "403", description = "Sin permisos")
   })
   public ResponseEntity<List<ProductoResult>> listar() {
-    permisoService.requirePermiso(Permisos.PRODUCTO_GESTION);
+    permisoService.requirePermiso("PRODUCTOS");
     return ResponseEntity.ok(listarProductosUseCase.listar(currentUserService.getEmpresaId()));
   }
 
@@ -115,7 +114,7 @@ public class ProductoController {
   public ResponseEntity<ProductoResult> buscar(
       @Parameter(description = "Codigo o codigo de barras") @RequestParam("codigo") String codigo
   ) {
-    permisoService.requirePermiso(Permisos.PRODUCTO_GESTION);
+    permisoService.requirePermiso("PRODUCTOS");
     ProductoResult result = buscarProductoPorCodigoUseCase.buscar(currentUserService.getEmpresaId(), codigo);
     return ResponseEntity.ok(result);
   }
@@ -134,7 +133,7 @@ public class ProductoController {
       @Parameter(description = "ID del producto") @PathVariable Long productoId,
       @Valid @RequestBody ProductoUpdateRequest request
   ) {
-    permisoService.requirePermiso(Permisos.PRODUCTO_GESTION);
+    permisoService.requirePermiso("PRODUCTOS");
     ProductoResult result = actualizarProductoUseCase.actualizar(
         currentUserService.getEmpresaId(),
         productoId,
@@ -165,7 +164,7 @@ public class ProductoController {
       @Parameter(description = "ID del producto") @PathVariable Long productoId,
       @Valid @RequestBody ProductoVendibleUpdateRequest request
   ) {
-    permisoService.requirePermiso(Permisos.PRODUCTO_GESTION);
+    permisoService.requirePermiso("PRODUCTOS");
     ProductoResult result = actualizarProductoVendibleUseCase.actualizarVendible(
         currentUserService.getEmpresaId(),
         productoId,

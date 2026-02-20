@@ -1,16 +1,17 @@
 package ec.sgi.backend.infrastructure.persistence.repository;
 
 import ec.sgi.backend.infrastructure.persistence.entity.AccionEntity;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AccionJpaRepository extends JpaRepository<AccionEntity, Long> {
-  List<AccionEntity> findByEmpresaId(Long empresaId);
+  Optional<AccionEntity> findByCodigo(String codigo);
 
-  Optional<AccionEntity> findByEmpresaIdAndCodigo(Long empresaId, String codigo);
+  List<AccionEntity> findByCodigoIn(Collection<String> codigos);
 
-  boolean existsByEmpresaIdAndCodigo(Long empresaId, String codigo);
+  boolean existsByCodigo(String codigo);
 
-  boolean existsByEmpresaIdAndCodigoAndActivoTrue(Long empresaId, String codigo);
+  boolean existsByCodigoAndActivoTrue(String codigo);
 }

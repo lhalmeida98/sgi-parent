@@ -32,6 +32,16 @@ public class EmpresaRepositoryAdapter implements EmpresaRepository {
   }
 
   @Override
+  public List<Empresa> findByIds(List<Long> ids) {
+    if (ids == null || ids.isEmpty()) {
+      return List.of();
+    }
+    return empresaJpaRepository.findAllById(ids).stream()
+        .map(this::toDomain)
+        .toList();
+  }
+
+  @Override
   public List<Empresa> findAll() {
     return empresaJpaRepository.findAll().stream().map(this::toDomain).toList();
   }

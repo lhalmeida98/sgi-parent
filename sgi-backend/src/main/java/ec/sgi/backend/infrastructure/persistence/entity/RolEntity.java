@@ -14,9 +14,9 @@ public class RolEntity {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  private Long empresaId;
   private String nombre;
   private String descripcion;
+  private Boolean activo;
   private LocalDateTime creadoEn;
   private LocalDateTime actualizadoEn;
 
@@ -29,14 +29,6 @@ public class RolEntity {
 
   public void setId(Long id) {
     this.id = id;
-  }
-
-  public Long getEmpresaId() {
-    return empresaId;
-  }
-
-  public void setEmpresaId(Long empresaId) {
-    this.empresaId = empresaId;
   }
 
   public String getNombre() {
@@ -53,6 +45,14 @@ public class RolEntity {
 
   public void setDescripcion(String descripcion) {
     this.descripcion = descripcion;
+  }
+
+  public Boolean getActivo() {
+    return activo;
+  }
+
+  public void setActivo(Boolean activo) {
+    this.activo = activo;
   }
 
   public LocalDateTime getCreadoEn() {

@@ -9,7 +9,6 @@ import ec.sgi.backend.application.port.in.CrearPreordenUseCase;
 import ec.sgi.backend.application.port.in.ListarPreordenesUseCase;
 import ec.sgi.backend.security.CurrentUserService;
 import ec.sgi.backend.security.PermisoService;
-import ec.sgi.backend.security.Permisos;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -56,7 +55,7 @@ public class PreordenController {
       @ApiResponse(responseCode = "403", description = "Sin permisos")
   })
   public ResponseEntity<PreordenCreateResult> crear(@Valid @RequestBody PreordenCreateRequest request) {
-    permisoService.requirePermiso(Permisos.PREORDEN_GESTION);
+    permisoService.requirePermiso("PREORDENES");
     Long empresaId = currentUserService.getEmpresaId();
     PreordenCreateResult result = crearPreordenUseCase.crear(new CrearPreordenCommand(
         empresaId,
@@ -81,7 +80,7 @@ public class PreordenController {
       @ApiResponse(responseCode = "403", description = "Sin permisos")
   })
   public ResponseEntity<List<PreordenResult>> listar() {
-    permisoService.requirePermiso(Permisos.PREORDEN_GESTION);
+    permisoService.requirePermiso("PREORDENES");
     return ResponseEntity.ok(listarPreordenesUseCase.listar(currentUserService.getEmpresaId()));
   }
 

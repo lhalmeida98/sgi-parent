@@ -2,13 +2,22 @@ package ec.sgi.backend.application.port.out;
 
 import ec.sgi.backend.domain.model.Rol;
 import java.util.List;
+import java.util.Optional;
 
 public interface RolRepository {
   Rol save(Rol rol);
 
-  List<Rol> findByEmpresaId(Long empresaId);
+  List<Rol> findAll();
 
-  boolean existsPermiso(Long empresaId, String nombreRol, String permiso);
+  Optional<Rol> findById(Long id);
 
-  boolean existsByNombre(Long empresaId, String nombreRol);
+  Optional<Rol> findByNombre(String nombreRol);
+
+  List<String> findPermisosByRoles(List<String> nombresRoles);
+
+  boolean existsPermiso(String nombreRol, String permiso);
+
+  boolean existsByNombre(String nombreRol);
+
+  void deleteById(Long id);
 }

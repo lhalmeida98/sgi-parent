@@ -4,5 +4,5 @@ import ec.sgi.backend.application.dto.RolResult;
 import java.util.List;
 
 public interface ListarRolesUseCase {
-  List<RolResult> listar(Long empresaId);
+  List<RolResult> listar();
 }

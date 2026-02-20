@@ -11,7 +11,6 @@ import ec.sgi.backend.application.port.in.CrearImpuestoUseCase;
 import ec.sgi.backend.application.port.in.ListarImpuestosUseCase;
 import ec.sgi.backend.security.CurrentUserService;
 import ec.sgi.backend.security.PermisoService;
-import ec.sgi.backend.security.Permisos;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -64,7 +63,7 @@ public class ImpuestoController {
       @ApiResponse(responseCode = "403", description = "Sin permisos")
   })
   public ResponseEntity<ImpuestoCreateResult> crear(@Valid @RequestBody ImpuestoCreateRequest request) {
-    permisoService.requirePermiso(Permisos.IMPUESTO_GESTION);
+    permisoService.requirePermiso("IMPUESTOS");
     Long empresaId = currentUserService.getEmpresaId();
     ImpuestoCreateResult result = crearImpuestoUseCase.crear(new CrearImpuestoCommand(
         empresaId,
@@ -86,7 +85,7 @@ public class ImpuestoController {
       @ApiResponse(responseCode = "403", description = "Sin permisos")
   })
   public ResponseEntity<List<ImpuestoResult>> listar() {
-    permisoService.requirePermiso(Permisos.IMPUESTO_GESTION);
+    permisoService.requireAnyPermiso("IMPUESTOS", "PRODUCTOS");
     return ResponseEntity.ok(listarImpuestosUseCase.listar(currentUserService.getEmpresaId()));
   }
 
@@ -104,7 +103,7 @@ public class ImpuestoController {
       @Parameter(description = "ID del impuesto") @PathVariable Long impuestoId,
       @Valid @RequestBody ImpuestoUpdateRequest request
   ) {
-    permisoService.requirePermiso(Permisos.IMPUESTO_GESTION);
+    permisoService.requirePermiso("IMPUESTOS");
     ImpuestoResult result = actualizarImpuestoUseCase.actualizar(
         currentUserService.getEmpresaId(),
         impuestoId,
