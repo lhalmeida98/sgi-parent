@@ -11,6 +11,11 @@ public class CurrentUserService {
     return principal.getEmpresaId();
   }
 
+  public Long getUsuarioId() {
+    UsuarioPrincipal principal = getPrincipal();
+    return principal.getId();
+  }
+
   public java.util.List<String> getRoles() {
     UsuarioPrincipal principal = getPrincipal();
     return principal.getRoles();
