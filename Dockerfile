@@ -7,8 +7,8 @@ WORKDIR /workspace
 # Copy source
 COPY . .
 
-# Build the runnable module and its dependencies, skipping tests
-RUN mvn -B clean package -pl sgi-backend -am -DskipTests
+# Build the runnable module and its dependencies, skipping tests (including test compile)
+RUN mvn -B clean package -pl sgi-backend -am -Dmaven.test.skip=true
 
 # Normalize the output JAR name for a clean runtime copy
 RUN set -e; \

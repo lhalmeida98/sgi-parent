@@ -12,6 +12,7 @@ class FacturaTotalsCalculatorTest {
   void calculaTotalesConImpuesto() {
     FacturaTotalsCalculator calculator = new FacturaTotalsCalculator();
     ItemCalculo item = new ItemCalculo(
+        null,
         1L,
         "P-001",
         "Producto A",
