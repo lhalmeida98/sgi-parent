@@ -14,6 +14,7 @@ public record EmpresaResult(
     String secuencial,
     String logoRuta,
     boolean obligadoContabilidad,
-    boolean regimenRimpe
+    boolean regimenRimpe,
+    Integer creditoDiasDefault
 ) {
 }

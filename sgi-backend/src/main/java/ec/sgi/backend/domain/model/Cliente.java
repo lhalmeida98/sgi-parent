@@ -9,7 +9,8 @@ public record Cliente(
     String identificacion,
     String razonSocial,
     String email,
-    String direccion
+    String direccion,
+    Integer creditoDias
 ) {
   public Cliente {
     Objects.requireNonNull(empresaId, "empresaId");

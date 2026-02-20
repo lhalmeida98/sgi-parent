@@ -25,6 +25,7 @@ public class EmpresaEntity {
   private String logoRuta;
   private boolean obligadoContabilidad;
   private boolean regimenRimpe;
+  private Integer creditoDiasDefault;
 
   public EmpresaEntity() {
   }
@@ -131,5 +132,13 @@ public class EmpresaEntity {
 
   public void setRegimenRimpe(boolean regimenRimpe) {
     this.regimenRimpe = regimenRimpe;
+  }
+
+  public Integer getCreditoDiasDefault() {
+    return creditoDiasDefault;
+  }
+
+  public void setCreditoDiasDefault(Integer creditoDiasDefault) {
+    this.creditoDiasDefault = creditoDiasDefault;
   }
 }

@@ -13,6 +13,7 @@ public record EmpresaCreateRequest(
     @NotBlank String ptoEmi,
     @NotBlank String secuencial,
     Boolean obligadoContabilidad,
-    Boolean regimenRimpe
+    Boolean regimenRimpe,
+    Integer creditoDiasDefault
 ) {
 }

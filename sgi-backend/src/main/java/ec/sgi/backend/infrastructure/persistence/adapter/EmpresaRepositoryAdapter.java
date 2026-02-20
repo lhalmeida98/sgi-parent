@@ -60,7 +60,8 @@ public class EmpresaRepositoryAdapter implements EmpresaRepository {
         entity.getSecuencial(),
         entity.getLogoRuta(),
         entity.isObligadoContabilidad(),
-        entity.isRegimenRimpe()
+        entity.isRegimenRimpe(),
+        entity.getCreditoDiasDefault()
     );
   }
 
@@ -79,6 +80,7 @@ public class EmpresaRepositoryAdapter implements EmpresaRepository {
     entity.setLogoRuta(empresa.logoRuta());
     entity.setObligadoContabilidad(empresa.obligadoContabilidad());
     entity.setRegimenRimpe(empresa.regimenRimpe());
+    entity.setCreditoDiasDefault(empresa.creditoDiasDefault());
     return entity;
   }
 }

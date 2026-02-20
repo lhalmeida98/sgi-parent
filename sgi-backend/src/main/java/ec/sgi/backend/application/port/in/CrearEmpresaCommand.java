@@ -13,7 +13,8 @@ public record CrearEmpresaCommand(
     String ptoEmi,
     String secuencial,
     boolean obligadoContabilidad,
-    boolean regimenRimpe
+    boolean regimenRimpe,
+    Integer creditoDiasDefault
 ) {
   public CrearEmpresaCommand {
     Objects.requireNonNull(ambiente, "ambiente");

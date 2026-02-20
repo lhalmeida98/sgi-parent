@@ -12,6 +12,7 @@ public record EmpresaUpdateRequest(
     @NotBlank String ptoEmi,
     @NotBlank String secuencial,
     Boolean obligadoContabilidad,
-    Boolean regimenRimpe
+    Boolean regimenRimpe,
+    Integer creditoDiasDefault
 ) {
 }

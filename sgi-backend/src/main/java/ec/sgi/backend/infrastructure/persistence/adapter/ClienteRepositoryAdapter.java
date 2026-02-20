@@ -51,7 +51,8 @@ public class ClienteRepositoryAdapter implements ClienteRepository {
         entity.getIdentificacion(),
         entity.getRazonSocial(),
         entity.getEmail(),
-        entity.getDireccion()
+        entity.getDireccion(),
+        entity.getCreditoDias()
     );
   }
 
@@ -64,6 +65,7 @@ public class ClienteRepositoryAdapter implements ClienteRepository {
     entity.setRazonSocial(cliente.razonSocial());
     entity.setEmail(cliente.email());
     entity.setDireccion(cliente.direccion());
+    entity.setCreditoDias(cliente.creditoDias());
     return entity;
   }
 }

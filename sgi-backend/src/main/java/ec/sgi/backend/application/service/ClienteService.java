@@ -29,7 +29,8 @@ public class ClienteService implements CrearClienteUseCase, ListarClientesUseCas
         command.identificacion(),
         command.razonSocial(),
         command.email(),
-        command.direccion()
+        command.direccion(),
+        command.creditoDias()
     );
     Cliente guardado = clienteRepository.save(cliente);
     return new ClienteCreateResult(guardado.id());
@@ -49,7 +50,8 @@ public class ClienteService implements CrearClienteUseCase, ListarClientesUseCas
         cliente.identificacion(),
         cliente.razonSocial(),
         cliente.email(),
-        cliente.direccion()
+        cliente.direccion(),
+        cliente.creditoDias()
     );
   }
 }

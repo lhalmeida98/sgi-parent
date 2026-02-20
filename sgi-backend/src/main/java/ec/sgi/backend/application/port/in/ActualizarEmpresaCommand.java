@@ -12,7 +12,8 @@ public record ActualizarEmpresaCommand(
     String ptoEmi,
     String secuencial,
     boolean obligadoContabilidad,
-    boolean regimenRimpe
+    boolean regimenRimpe,
+    Integer creditoDiasDefault
 ) {
   public ActualizarEmpresaCommand {
     Objects.requireNonNull(ambiente, "ambiente");

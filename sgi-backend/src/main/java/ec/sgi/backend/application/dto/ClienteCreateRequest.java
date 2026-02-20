@@ -8,6 +8,7 @@ public record ClienteCreateRequest(
     @NotBlank String identificacion,
     @NotBlank String razonSocial,
     @NotBlank @Email String email,
-    @NotBlank String direccion
+    @NotBlank String direccion,
+    Integer creditoDias
 ) {
 }

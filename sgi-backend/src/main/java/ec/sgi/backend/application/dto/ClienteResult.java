@@ -7,6 +7,7 @@ public record ClienteResult(
     String identificacion,
     String razonSocial,
     String email,
-    String direccion
+    String direccion,
+    Integer creditoDias
 ) {
 }

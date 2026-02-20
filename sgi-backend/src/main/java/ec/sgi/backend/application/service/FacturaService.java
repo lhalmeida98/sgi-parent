@@ -30,6 +30,8 @@ import ec.sgi.backend.application.port.in.ReenviarFacturasEnProcesoUseCase;
 import ec.sgi.backend.application.port.in.ReenviarFacturaEnProcesoUseCase;
 import ec.sgi.backend.application.usecase.EnviarFacturaPorEmailUseCase;
 import ec.sgi.backend.application.port.out.ClienteRepository;
+import ec.sgi.backend.application.port.out.CuentaPorCobrarRepository;
+import ec.sgi.backend.application.port.out.DocumentoClienteRepository;
 import ec.sgi.backend.application.port.out.BodegaRepository;
 import ec.sgi.backend.application.port.out.EmpresaRepository;
 import ec.sgi.backend.application.port.out.FacturaRepository;
@@ -40,6 +42,8 @@ import ec.sgi.backend.application.port.out.PreordenRepository;
 import ec.sgi.backend.application.port.out.ProductoRepository;
 import ec.sgi.backend.application.port.out.SriCorePort;
 import ec.sgi.backend.domain.model.Cliente;
+import ec.sgi.backend.domain.model.CuentaPorCobrar;
+import ec.sgi.backend.domain.model.DocumentoCliente;
 import ec.sgi.backend.domain.model.Empresa;
 import ec.sgi.backend.domain.model.Factura;
 import ec.sgi.backend.domain.model.FacturaEstado;
@@ -64,12 +68,16 @@ import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Locale;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -89,10 +97,23 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
     ReenviarFacturaEnProcesoUseCase, ConsultarFacturaEnProcesoUseCase,
     ListarFacturasUseCase, ObtenerFacturaXmlUseCase {
   private static final BigDecimal PROPINA_CERO = BigDecimal.ZERO.setScale(2);
+  private static final String DOC_ESTADO_EMITIDA = "EMITIDA";
+  private static final String DOC_ESTADO_PARCIAL = "PARCIAL";
+  private static final String DOC_ESTADO_COBRADA = "COBRADA";
+  private static final String DOC_ESTADO_ANULADA = "ANULADA";
+  private static final String CXC_ESTADO_PENDIENTE = "PENDIENTE";
+  private static final String CXC_ESTADO_PARCIAL = "PARCIAL";
+  private static final String CXC_ESTADO_COBRADA = "COBRADA";
+  private static final String FORMA_PAGO_CREDITO = "CREDITO";
+  private static final int DIAS_CREDITO_DEFAULT = 30;
+  private static final int DIAS_CREDITO_MAX = 365;
+  private static final Pattern DIAS_CREDITO_PATTERN = Pattern.compile("(\\d{1,3})");
   private static final Logger log = LoggerFactory.getLogger(FacturaService.class);
 
   private final FacturaRepository facturaRepository;
   private final ClienteRepository clienteRepository;
+  private final DocumentoClienteRepository documentoClienteRepository;
+  private final CuentaPorCobrarRepository cuentaPorCobrarRepository;
   private final ProductoRepository productoRepository;
   private final ImpuestoRepository impuestoRepository;
   private final InventarioRepository inventarioRepository;
@@ -114,6 +135,8 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
   public FacturaService(
       FacturaRepository facturaRepository,
       ClienteRepository clienteRepository,
+      DocumentoClienteRepository documentoClienteRepository,
+      CuentaPorCobrarRepository cuentaPorCobrarRepository,
       ProductoRepository productoRepository,
       ImpuestoRepository impuestoRepository,
       InventarioRepository inventarioRepository,
@@ -134,6 +157,8 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
   ) {
     this.facturaRepository = facturaRepository;
     this.clienteRepository = clienteRepository;
+    this.documentoClienteRepository = documentoClienteRepository;
+    this.cuentaPorCobrarRepository = cuentaPorCobrarRepository;
     this.productoRepository = productoRepository;
     this.impuestoRepository = impuestoRepository;
     this.inventarioRepository = inventarioRepository;
@@ -273,6 +298,7 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
       revertirInventarioSiAplica(factura, actualizadaFactura);
       autoSendIfAuthorized(factura, actualizadaFactura);
       actualizadaFactura = consultarEstadoConDelaySiAplica(actualizadaFactura);
+      sincronizarDocumentoClienteSiAplica(actualizadaFactura);
       if (actualizadaFactura.estado() != FacturaEstado.NO_AUTORIZADA
           && actualizadaFactura.estado() != FacturaEstado.ERROR) {
         Empresa actualizada = empresa.withSecuencial(nextSecuencial(secuencial));
@@ -317,6 +343,7 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
     revertirInventarioSiAplica(factura, actualizada);
     facturaRepository.save(actualizada);
     autoSendIfAuthorized(factura, actualizada);
+    sincronizarDocumentoClienteSiAplica(actualizada);
     return toEstadoResult(actualizada);
   }
 
@@ -637,6 +664,7 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
       revertirInventarioSiAplica(factura, actualizada);
       Factura guardada = facturaRepository.save(actualizada);
       autoSendIfAuthorized(intento, guardada);
+      sincronizarDocumentoClienteSiAplica(guardada);
       return guardada;
     } catch (SriCoreException ex) {
       log.warn("Error consultando estado SRI para factura {}: {}", factura.id(), ex.getMessage());
@@ -647,6 +675,286 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
       Factura error = intento.withSriEstado(new SriEstado(null, null, ex.getMessage()));
       return facturaRepository.save(error);
     }
+  }
+
+  private void sincronizarDocumentoClienteSiAplica(Factura factura) {
+    if (factura == null) {
+      return;
+    }
+    if (factura.estado() != FacturaEstado.AUTORIZADA) {
+      return;
+    }
+    String numeroFactura = buildNumeroFactura(factura.infoTributaria());
+    if (numeroFactura.isBlank()) {
+      return;
+    }
+    BigDecimal total = factura.totales().importeTotal();
+    BigDecimal montoCredito = calcularMontoCredito(factura.pagos());
+    boolean tieneCredito = montoCredito.compareTo(BigDecimal.ZERO) > 0;
+    CuentaPorCobrar cuentaExistente = null;
+    DocumentoCliente existente = documentoClienteRepository.findByFacturaId(factura.id()).orElse(null);
+    if (existente != null && DOC_ESTADO_ANULADA.equals(existente.estado())) {
+      return;
+    }
+    if (existente != null) {
+      cuentaExistente = cuentaPorCobrarRepository.findByDocumentoClienteId(existente.id()).orElse(null);
+    }
+    String estadoDocumento = determinarEstadoDocumento(total, montoCredito, cuentaExistente);
+    int creditoDias = tieneCredito
+        ? resolveCreditoDias(factura.empresaId(), factura.clienteId(), factura.pagos())
+        : 0;
+    LocalDate fechaVencimiento = calcularFechaVencimiento(factura.fechaEmision(), tieneCredito, creditoDias);
+
+    DocumentoCliente documento;
+    if (existente == null) {
+      if (documentoClienteRepository.existsByEmpresaIdAndNumeroFactura(factura.empresaId(), numeroFactura)) {
+        log.warn("Numero de factura {} ya registrado en documentos cliente.", numeroFactura);
+      }
+      documento = new DocumentoCliente(
+          null,
+          factura.empresaId(),
+          factura.clienteId(),
+          factura.id(),
+          factura.claveAcceso(),
+          numeroFactura,
+          factura.fechaEmision(),
+          fechaVencimiento,
+          total,
+          estadoDocumento,
+          null,
+          null
+      );
+    } else {
+      documento = new DocumentoCliente(
+          existente.id(),
+          existente.empresaId(),
+          existente.clienteId(),
+          existente.facturaId(),
+          factura.claveAcceso(),
+          numeroFactura,
+          factura.fechaEmision(),
+          fechaVencimiento,
+          total,
+          estadoDocumento,
+          existente.creadoEn(),
+          LocalDateTime.now()
+      );
+    }
+    DocumentoCliente guardado = documentoClienteRepository.save(documento);
+    CuentaPorCobrar cuenta = sincronizarCuentaPorCobrar(factura, guardado, montoCredito, total, fechaVencimiento,
+        creditoDias);
+    if (cuenta != null) {
+      String estadoDocPorCuenta = determinarEstadoDocumento(total, montoCredito, cuenta);
+      if (!estadoDocPorCuenta.equals(guardado.estado())) {
+        DocumentoCliente actualizado = new DocumentoCliente(
+            guardado.id(),
+            guardado.empresaId(),
+            guardado.clienteId(),
+            guardado.facturaId(),
+            guardado.claveAcceso(),
+            guardado.numeroFactura(),
+            guardado.fechaEmision(),
+            guardado.fechaVencimiento(),
+            guardado.total(),
+            estadoDocPorCuenta,
+            guardado.creadoEn(),
+            LocalDateTime.now()
+        );
+        documentoClienteRepository.save(actualizado);
+      }
+    }
+  }
+
+  private CuentaPorCobrar sincronizarCuentaPorCobrar(Factura factura, DocumentoCliente documento, BigDecimal montoCredito,
+      BigDecimal total, LocalDate fechaVencimiento, int creditoDias) {
+    if (documento == null) {
+      return null;
+    }
+    BigDecimal montoOriginal = montoCredito.compareTo(BigDecimal.ZERO) > 0 ? montoCredito : total;
+    CuentaPorCobrar existente = cuentaPorCobrarRepository.findByDocumentoClienteId(documento.id()).orElse(null);
+    CuentaPorCobrar cuenta;
+    if (montoCredito.compareTo(BigDecimal.ZERO) > 0) {
+      if (existente == null) {
+        cuenta = new CuentaPorCobrar(
+            null,
+            factura.empresaId(),
+            factura.clienteId(),
+            documento.id(),
+            montoOriginal,
+            BigDecimal.ZERO,
+            montoOriginal,
+            CXC_ESTADO_PENDIENTE,
+            fechaVencimiento,
+            creditoDias,
+            null,
+            null
+        );
+      } else {
+        BigDecimal nuevoSaldo = montoOriginal.subtract(existente.montoCobrado());
+        String nuevoEstado;
+        if (nuevoSaldo.compareTo(BigDecimal.ZERO) == 0) {
+          nuevoEstado = CXC_ESTADO_COBRADA;
+        } else if (nuevoSaldo.compareTo(montoOriginal) < 0) {
+          nuevoEstado = CXC_ESTADO_PARCIAL;
+        } else {
+          nuevoEstado = CXC_ESTADO_PENDIENTE;
+        }
+        cuenta = new CuentaPorCobrar(
+            existente.id(),
+            existente.empresaId(),
+            existente.clienteId(),
+            existente.documentoClienteId(),
+            montoOriginal,
+            existente.montoCobrado(),
+            nuevoSaldo,
+            nuevoEstado,
+            fechaVencimiento,
+            creditoDias,
+            existente.creadoEn(),
+            LocalDateTime.now()
+        );
+      }
+    } else {
+      cuenta = new CuentaPorCobrar(
+          existente == null ? null : existente.id(),
+          factura.empresaId(),
+          factura.clienteId(),
+          documento.id(),
+          montoOriginal,
+          montoOriginal,
+          BigDecimal.ZERO,
+          CXC_ESTADO_COBRADA,
+          fechaVencimiento,
+          creditoDias,
+          existente == null ? null : existente.creadoEn(),
+          LocalDateTime.now()
+      );
+    }
+    return cuentaPorCobrarRepository.save(cuenta);
+  }
+
+  private String determinarEstadoDocumento(BigDecimal total, BigDecimal montoCredito, CuentaPorCobrar cuentaExistente) {
+    if (montoCredito.compareTo(BigDecimal.ZERO) == 0) {
+      return DOC_ESTADO_COBRADA;
+    }
+    boolean esMixto = montoCredito.compareTo(total) < 0;
+    if (cuentaExistente != null) {
+      if (CXC_ESTADO_COBRADA.equals(cuentaExistente.estado())) {
+        return DOC_ESTADO_COBRADA;
+      }
+      if (CXC_ESTADO_PARCIAL.equals(cuentaExistente.estado())) {
+        return DOC_ESTADO_PARCIAL;
+      }
+      return esMixto ? DOC_ESTADO_PARCIAL : DOC_ESTADO_EMITIDA;
+    }
+    if (montoCredito.compareTo(total) == 0) {
+      return DOC_ESTADO_EMITIDA;
+    }
+    return DOC_ESTADO_PARCIAL;
+  }
+
+  private LocalDate calcularFechaVencimiento(LocalDate fechaEmision, boolean tieneCredito, int creditoDias) {
+    if (fechaEmision == null) {
+      return null;
+    }
+    if (!tieneCredito) {
+      return fechaEmision;
+    }
+    int dias = sanitizeCreditoDias(creditoDias);
+    return fechaEmision.plusDays(dias);
+  }
+
+  private BigDecimal calcularMontoCredito(List<FacturaPago> pagos) {
+    BigDecimal monto = BigDecimal.ZERO;
+    for (FacturaPago pago : pagos) {
+      if (esPagoCredito(pago.formaPago())) {
+        monto = monto.add(pago.monto());
+      }
+    }
+    return monto;
+  }
+
+  private int resolveCreditoDias(Long empresaId, Long clienteId, List<FacturaPago> pagos) {
+    if (clienteId == null || empresaId == null) {
+      return DIAS_CREDITO_DEFAULT;
+    }
+    Integer diasPorPago = extractCreditoDiasFromPagos(pagos);
+    if (diasPorPago != null) {
+      return sanitizeCreditoDias(diasPorPago);
+    }
+    Integer clienteDias = clienteRepository.findByIdAndEmpresaId(clienteId, empresaId)
+        .map(Cliente::creditoDias)
+        .orElse(null);
+    if (clienteDias != null) {
+      return sanitizeCreditoDias(clienteDias);
+    }
+    return empresaRepository.findById(empresaId)
+        .map(Empresa::creditoDiasDefault)
+        .map(this::sanitizeCreditoDias)
+        .orElse(DIAS_CREDITO_DEFAULT);
+  }
+
+  private int sanitizeCreditoDias(Integer dias) {
+    if (dias == null) {
+      return DIAS_CREDITO_DEFAULT;
+    }
+    if (dias == 0) {
+      return 0;
+    }
+    if (dias < 0) {
+      return DIAS_CREDITO_DEFAULT;
+    }
+    if (dias > DIAS_CREDITO_MAX) {
+      return DIAS_CREDITO_MAX;
+    }
+    return dias;
+  }
+
+  private Integer extractCreditoDiasFromPagos(List<FacturaPago> pagos) {
+    if (pagos == null || pagos.isEmpty()) {
+      return null;
+    }
+    Integer max = null;
+    for (FacturaPago pago : pagos) {
+      if (!esPagoCredito(pago.formaPago())) {
+        continue;
+      }
+      Integer parsed = parseCreditoDias(pago.formaPago());
+      if (parsed != null) {
+        max = max == null ? parsed : Math.max(max, parsed);
+      }
+    }
+    return max;
+  }
+
+  private Integer parseCreditoDias(String formaPago) {
+    if (formaPago == null || formaPago.isBlank()) {
+      return null;
+    }
+    Matcher matcher = DIAS_CREDITO_PATTERN.matcher(formaPago);
+    if (!matcher.find()) {
+      return null;
+    }
+    try {
+      return Integer.parseInt(matcher.group(1));
+    } catch (NumberFormatException ex) {
+      return null;
+    }
+  }
+
+  private boolean esPagoCredito(String formaPago) {
+    String normalizado = normalizarFormaPago(formaPago);
+    return normalizado.contains(FORMA_PAGO_CREDITO);
+  }
+
+  private String normalizarFormaPago(String formaPago) {
+    if (formaPago == null) {
+      return "";
+    }
+    String sinAcentos = Normalizer.normalize(formaPago, Normalizer.Form.NFD)
+        .replaceAll("\\p{M}", "");
+    String upper = sinAcentos.trim().toUpperCase(Locale.ROOT);
+    return upper.replaceAll("[^A-Z0-9]", "");
   }
 
   private void ajustarInventarioPorFactura(List<FacturaItem> items, Preorden preorden, Long empresaId) {

@@ -36,6 +36,8 @@ public class EmpresaService implements CrearEmpresaUseCase, ListarEmpresasUseCas
     SubirFirmaElectronicaUseCase, ActualizarEmpresaUseCase, SubirLogoEmpresaUseCase {
   private static final String DEFAULT_TIPO_CONTENIDO = "application/x-pkcs12";
   private static final Set<String> LOGO_TIPOS_CONTENIDO = Set.of("image/png", "image/jpeg", "image/jpg");
+  private static final int CREDITO_DIAS_DEFAULT = 30;
+  private static final int CREDITO_DIAS_MAX = 365;
 
   private final EmpresaRepository empresaRepository;
   private final FirmaElectronicaRepository firmaElectronicaRepository;
@@ -57,6 +59,7 @@ public class EmpresaService implements CrearEmpresaUseCase, ListarEmpresasUseCas
   @Override
   public EmpresaCreateResult crear(CrearEmpresaCommand command) {
     validarSecuencial(command.secuencial());
+    Integer creditoDiasDefault = sanitizeCreditoDias(command.creditoDiasDefault());
     Empresa empresa = new Empresa(
         null,
         command.ambiente(),
@@ -70,7 +73,8 @@ public class EmpresaService implements CrearEmpresaUseCase, ListarEmpresasUseCas
         command.secuencial().trim(),
         null,
         command.obligadoContabilidad(),
-        command.regimenRimpe()
+        command.regimenRimpe(),
+        creditoDiasDefault
     );
     Empresa guardada = empresaRepository.save(empresa);
     return new EmpresaCreateResult(guardada.id());
@@ -88,6 +92,9 @@ public class EmpresaService implements CrearEmpresaUseCase, ListarEmpresasUseCas
     Empresa existente = empresaRepository.findById(empresaId)
         .orElseThrow(() -> new ResourceNotFoundException("Empresa no encontrada"));
     validarSecuencial(command.secuencial());
+    Integer creditoDiasDefault = command.creditoDiasDefault() == null
+        ? existente.creditoDiasDefault()
+        : sanitizeCreditoDias(command.creditoDiasDefault());
 
     Empresa actualizada = new Empresa(
         existente.id(),
@@ -102,7 +109,8 @@ public class EmpresaService implements CrearEmpresaUseCase, ListarEmpresasUseCas
         command.secuencial().trim(),
         existente.logoRuta(),
         command.obligadoContabilidad(),
-        command.regimenRimpe()
+        command.regimenRimpe(),
+        creditoDiasDefault
     );
     Empresa guardada = empresaRepository.save(actualizada);
     return toResult(guardada);
@@ -160,8 +168,22 @@ public class EmpresaService implements CrearEmpresaUseCase, ListarEmpresasUseCas
         empresa.secuencial(),
         empresa.logoRuta(),
         empresa.obligadoContabilidad(),
-        empresa.regimenRimpe()
+        empresa.regimenRimpe(),
+        empresa.creditoDiasDefault()
     );
+  }
+
+  private Integer sanitizeCreditoDias(Integer dias) {
+    if (dias == null) {
+      return CREDITO_DIAS_DEFAULT;
+    }
+    if (dias < 0) {
+      return CREDITO_DIAS_DEFAULT;
+    }
+    if (dias > CREDITO_DIAS_MAX) {
+      return CREDITO_DIAS_MAX;
+    }
+    return dias;
   }
 
   private void validarFirma(SubirFirmaElectronicaCommand command) {

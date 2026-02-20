@@ -62,7 +62,8 @@ public class ClienteController {
         request.identificacion(),
         request.razonSocial(),
         request.email(),
-        request.direccion()
+        request.direccion(),
+        request.creditoDias()
     ));
     return ResponseEntity.status(HttpStatus.CREATED).body(result);
   }

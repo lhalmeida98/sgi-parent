@@ -15,7 +15,8 @@ public record Empresa(
     String secuencial,
     String logoRuta,
     boolean obligadoContabilidad,
-    boolean regimenRimpe
+    boolean regimenRimpe,
+    Integer creditoDiasDefault
 ) {
   public Empresa {
     Objects.requireNonNull(ambiente, "ambiente");
@@ -43,7 +44,8 @@ public record Empresa(
         nuevoSecuencial,
         logoRuta,
         obligadoContabilidad,
-        regimenRimpe
+        regimenRimpe,
+        creditoDiasDefault
     );
   }
 
@@ -61,7 +63,8 @@ public record Empresa(
         secuencial,
         nuevaRuta,
         obligadoContabilidad,
-        regimenRimpe
+        regimenRimpe,
+        creditoDiasDefault
     );
   }
 }

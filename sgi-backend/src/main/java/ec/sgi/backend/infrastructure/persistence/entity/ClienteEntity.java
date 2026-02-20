@@ -19,6 +19,7 @@ public class ClienteEntity {
   private String razonSocial;
   private String email;
   private String direccion;
+  private Integer creditoDias;
 
   public ClienteEntity() {
   }
@@ -77,5 +78,13 @@ public class ClienteEntity {
 
   public void setDireccion(String direccion) {
     this.direccion = direccion;
+  }
+
+  public Integer getCreditoDias() {
+    return creditoDias;
+  }
+
+  public void setCreditoDias(Integer creditoDias) {
+    this.creditoDias = creditoDias;
   }
 }

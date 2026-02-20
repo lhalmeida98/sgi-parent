@@ -81,7 +81,8 @@ public class EmpresaController {
         request.ptoEmi(),
         request.secuencial(),
         Boolean.TRUE.equals(request.obligadoContabilidad()),
-        Boolean.TRUE.equals(request.regimenRimpe())
+        Boolean.TRUE.equals(request.regimenRimpe()),
+        request.creditoDiasDefault()
     ));
     return ResponseEntity.status(HttpStatus.CREATED).body(result);
   }
@@ -122,7 +123,8 @@ public class EmpresaController {
         request.ptoEmi(),
         request.secuencial(),
         Boolean.TRUE.equals(request.obligadoContabilidad()),
-        Boolean.TRUE.equals(request.regimenRimpe())
+        Boolean.TRUE.equals(request.regimenRimpe()),
+        request.creditoDiasDefault()
     ));
     return ResponseEntity.ok(result);
   }

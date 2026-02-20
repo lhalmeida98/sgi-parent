@@ -6,7 +6,8 @@ public record CrearClienteCommand(
     String identificacion,
     String razonSocial,
     String email,
-    String direccion
+    String direccion,
+    Integer creditoDias
 ) {
   public CrearClienteCommand {
     java.util.Objects.requireNonNull(empresaId, "empresaId");
