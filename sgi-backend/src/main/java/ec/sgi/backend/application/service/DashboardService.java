@@ -13,34 +13,29 @@ import ec.sgi.backend.application.port.out.FacturaRepository;
 import ec.sgi.backend.application.port.out.InventarioRepository;
 import ec.sgi.backend.application.port.out.PagoProveedorRepository;
 import ec.sgi.backend.application.port.out.ProductoRepository;
-import ec.sgi.backend.domain.model.CobroCliente;
-import ec.sgi.backend.domain.model.CuentaPorCobrar;
-import ec.sgi.backend.domain.model.CuentaPorPagar;
-import ec.sgi.backend.domain.model.Factura;
 import ec.sgi.backend.domain.model.FacturaEstado;
-import ec.sgi.backend.domain.model.FacturaItem;
-import ec.sgi.backend.domain.model.InfoTributariaData;
 import ec.sgi.backend.domain.model.Inventario;
-import ec.sgi.backend.domain.model.PagoProveedor;
 import ec.sgi.backend.domain.model.Producto;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional(readOnly = true)
 public class DashboardService implements ObtenerDashboardResumenUseCase {
+  private static final Logger log = LoggerFactory.getLogger(DashboardService.class);
   private static final String ESTADO_COBRADA = "COBRADA";
   private static final String ESTADO_ANULADA = "ANULADA";
   private static final String ESTADO_PAGADO = "PAGADO";
@@ -52,6 +47,12 @@ public class DashboardService implements ObtenerDashboardResumenUseCase {
   private final CobroClienteRepository cobroClienteRepository;
   private final PagoProveedorRepository pagoProveedorRepository;
   private final ProductoRepository productoRepository;
+
+  @Value("${app.logging.dashboard-timing.enabled:true}")
+  private boolean timingEnabled;
+
+  @Value("${app.logging.dashboard-timing.min-ms:200}")
+  private long timingMinMs;
 
   public DashboardService(
       FacturaRepository facturaRepository,
@@ -78,40 +79,35 @@ public class DashboardService implements ObtenerDashboardResumenUseCase {
     LocalDate inicioMesAnterior = inicioMes.minusMonths(1);
     LocalDate finMesAnterior = inicioMes.minusDays(1);
 
-    BigDecimal ventasMes = calcularVentas(empresaId, inicioMes, hoy);
-    BigDecimal ventasMesAnterior = calcularVentas(empresaId, inicioMesAnterior, finMesAnterior);
-    BigDecimal variacion = calcularVariacionPct(ventasMes, ventasMesAnterior);
+    BigDecimal ventasMes = timed("ventasMes", () -> calcularVentas(empresaId, inicioMes, hoy));
+    BigDecimal ventasMesAnterior = timed("ventasMesAnterior",
+        () -> calcularVentas(empresaId, inicioMesAnterior, finMesAnterior));
+    BigDecimal variacion = timed("variacionPct", () -> calcularVariacionPct(ventasMes, ventasMesAnterior));
 
-    List<CuentaPorCobrar> cxc = cuentaPorCobrarRepository.findByEmpresaId(empresaId);
-    BigDecimal saldoCxc = cxc.stream()
-        .filter(cuenta -> cuenta.saldo() != null && cuenta.saldo().compareTo(BigDecimal.ZERO) > 0)
-        .filter(cuenta -> !ESTADO_COBRADA.equals(cuenta.estado()) && !ESTADO_ANULADA.equals(cuenta.estado()))
-        .map(CuentaPorCobrar::saldo)
-        .reduce(BigDecimal.ZERO, BigDecimal::add);
-    long pendientesHoy = cxc.stream()
-        .filter(cuenta -> cuenta.saldo() != null && cuenta.saldo().compareTo(BigDecimal.ZERO) > 0)
-        .filter(cuenta -> cuenta.fechaVencimiento() != null && cuenta.fechaVencimiento().equals(hoy))
-        .count();
+    List<String> estadosCxcExcluidos = List.of(ESTADO_COBRADA, ESTADO_ANULADA);
+    BigDecimal saldoCxc = timed("cxc.saldo",
+        () -> cuentaPorCobrarRepository.sumSaldoPendienteByEmpresaId(empresaId, estadosCxcExcluidos));
+    long pendientesHoy = timed("cxc.pendientesHoy",
+        () -> cuentaPorCobrarRepository.countPendientesByEmpresaIdAndFechaVencimiento(
+            empresaId, hoy, estadosCxcExcluidos));
 
-    long stockCritico = calcularStockCritico(empresaId);
+    long stockCritico = timed("stockCritico", () -> calcularStockCritico(empresaId));
 
-    List<CuentaPorPagar> cxp = cuentaPorPagarRepository.findByEmpresaId(empresaId);
-    BigDecimal saldoCxp = cxp.stream()
-        .filter(cuenta -> cuenta.saldo() != null && cuenta.saldo().compareTo(BigDecimal.ZERO) > 0)
-        .filter(cuenta -> !ESTADO_PAGADO.equals(cuenta.estado()))
-        .map(CuentaPorPagar::saldo)
-        .reduce(BigDecimal.ZERO, BigDecimal::add);
-    long vencenSemana = cxp.stream()
-        .filter(cuenta -> cuenta.saldo() != null && cuenta.saldo().compareTo(BigDecimal.ZERO) > 0)
-        .filter(cuenta -> cuenta.fechaVencimiento() != null)
-        .filter(cuenta -> diasEntre(hoy, cuenta.fechaVencimiento()) >= 0
-            && diasEntre(hoy, cuenta.fechaVencimiento()) <= 7)
-        .count();
+    List<String> estadosCxpExcluidos = List.of(ESTADO_PAGADO);
+    BigDecimal saldoCxp = timed("cxp.saldo",
+        () -> cuentaPorPagarRepository.sumSaldoPendienteByEmpresaId(empresaId, estadosCxpExcluidos));
+    LocalDate finSemana = hoy.plusDays(7);
+    long vencenSemana = timed("cxp.vencenSemana",
+        () -> cuentaPorPagarRepository.countVencenEntreFechasByEmpresaId(
+            empresaId, hoy, finSemana, estadosCxpExcluidos));
 
-    List<DashboardFlujoCajaResult> flujoCaja = buildFlujoCaja30Dias(empresaId, hoy);
-    List<DashboardFacturaItemResult> ultimasFacturas = buildUltimasFacturas(empresaId, hoy);
-    List<DashboardProductoVendidoResult> productosMasVendidos = buildProductosMasVendidos(empresaId, hoy);
-    List<DashboardProductoStockBajoResult> productosMenosStock = buildProductosMenosStock(empresaId);
+    List<DashboardFlujoCajaResult> flujoCaja = timed("flujoCaja", () -> buildFlujoCaja30Dias(empresaId, hoy));
+    List<DashboardFacturaItemResult> ultimasFacturas = timed("ultimasFacturas",
+        () -> buildUltimasFacturas(empresaId, hoy));
+    List<DashboardProductoVendidoResult> productosMasVendidos = timed("productosMasVendidos",
+        () -> buildProductosMasVendidos(empresaId, hoy));
+    List<DashboardProductoStockBajoResult> productosMenosStock = timed("productosMenosStock",
+        () -> buildProductosMenosStock(empresaId));
 
     return new DashboardResumenResult(
         ventasMes,
@@ -133,11 +129,8 @@ public class DashboardService implements ObtenerDashboardResumenUseCase {
     if (desde == null || hasta == null) {
       return BigDecimal.ZERO;
     }
-    List<Factura> facturas = fetchFacturas(empresaId, desde, hasta, 500);
-    return facturas.stream()
-        .filter(factura -> factura.estado() == FacturaEstado.AUTORIZADA)
-        .map(factura -> factura.totales().importeTotal())
-        .reduce(BigDecimal.ZERO, BigDecimal::add);
+    return facturaRepository.sumImporteTotalByEmpresaIdAndFechaEmisionBetweenAndEstado(
+        empresaId, desde, hasta, FacturaEstado.AUTORIZADA);
   }
 
   private BigDecimal calcularVariacionPct(BigDecimal actual, BigDecimal anterior) {
@@ -155,11 +148,7 @@ public class DashboardService implements ObtenerDashboardResumenUseCase {
   }
 
   private long calcularStockCritico(Long empresaId) {
-    List<Inventario> inventarios = inventarioRepository.findByEmpresaId(empresaId);
-    return inventarios.stream()
-        .filter(inv -> inv.stockMinimo() != null)
-        .filter(inv -> inv.stockActual().compareTo(inv.stockMinimo()) <= 0)
-        .count();
+    return inventarioRepository.countStockCriticoByEmpresaId(empresaId);
   }
 
   private List<DashboardFlujoCajaResult> buildFlujoCaja30Dias(Long empresaId, LocalDate hoy) {
@@ -172,24 +161,28 @@ public class DashboardService implements ObtenerDashboardResumenUseCase {
       egresos.put(fecha, BigDecimal.ZERO);
     }
 
-    for (CobroCliente cobro : cobroClienteRepository.findByEmpresaId(empresaId)) {
-      if (cobro.fecha() == null || cobro.montoTotal() == null) {
+    List<CobroClienteRepository.FechaTotal> cobros = timed(
+        "cobros.sum",
+        () -> cobroClienteRepository.sumMontosPorFecha(empresaId, inicio, hoy)
+    );
+    for (CobroClienteRepository.FechaTotal cobro : cobros) {
+      LocalDate fecha = cobro.fecha();
+      if (fecha == null || !ingresos.containsKey(fecha)) {
         continue;
       }
-      if (cobro.fecha().isBefore(inicio) || cobro.fecha().isAfter(hoy)) {
-        continue;
-      }
-      ingresos.put(cobro.fecha(), ingresos.get(cobro.fecha()).add(cobro.montoTotal()));
+      ingresos.put(fecha, ingresos.get(fecha).add(cobro.total()));
     }
 
-    for (PagoProveedor pago : pagoProveedorRepository.findByEmpresaId(empresaId)) {
-      if (pago.fechaPago() == null || pago.montoTotal() == null) {
+    List<PagoProveedorRepository.FechaTotal> pagos = timed(
+        "pagos.sum",
+        () -> pagoProveedorRepository.sumMontosPorFecha(empresaId, inicio, hoy)
+    );
+    for (PagoProveedorRepository.FechaTotal pago : pagos) {
+      LocalDate fecha = pago.fecha();
+      if (fecha == null || !egresos.containsKey(fecha)) {
         continue;
       }
-      if (pago.fechaPago().isBefore(inicio) || pago.fechaPago().isAfter(hoy)) {
-        continue;
-      }
-      egresos.put(pago.fechaPago(), egresos.get(pago.fechaPago()).add(pago.montoTotal()));
+      egresos.put(fecha, egresos.get(fecha).add(pago.total()));
     }
 
     List<DashboardFlujoCajaResult> resultados = new ArrayList<>();
@@ -209,44 +202,17 @@ public class DashboardService implements ObtenerDashboardResumenUseCase {
 
   private List<DashboardFacturaItemResult> buildUltimasFacturas(Long empresaId, LocalDate hoy) {
     LocalDate desde = hoy.minusDays(30);
-    PageRequest pageable = PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "fechaEmision")
-        .and(Sort.by(Sort.Direction.DESC, "id")));
-    Page<Factura> page = facturaRepository.findByEmpresaIdAndFechaEmisionBetween(empresaId, desde, hoy, pageable);
-    return page.getContent().stream()
-        .map(this::toFacturaItem)
-        .toList();
+    return facturaRepository.findUltimasFacturasResumen(empresaId, desde, hoy, 5);
   }
 
   private List<DashboardProductoVendidoResult> buildProductosMasVendidos(Long empresaId, LocalDate hoy) {
     LocalDate desde = hoy.minusDays(30);
-    List<Factura> facturas = fetchFacturas(empresaId, desde, hoy, 500).stream()
-        .filter(factura -> factura.estado() == FacturaEstado.AUTORIZADA)
-        .toList();
-
-    Map<Long, ProductoResumen> resumenes = new HashMap<>();
-    for (Factura factura : facturas) {
-      for (FacturaItem item : factura.items()) {
-        ProductoResumen resumen = resumenes.computeIfAbsent(item.productoId(), id -> new ProductoResumen(id,
-            item.descripcion()));
-        resumen.cantidad = resumen.cantidad.add(item.cantidad());
-        resumen.total = resumen.total.add(item.precioTotalSinImpuesto());
-      }
-    }
-
-    return resumenes.values().stream()
-        .sorted(Comparator.comparing(ProductoResumen::getTotal).reversed())
-        .limit(5)
-        .map(resumen -> new DashboardProductoVendidoResult(
-            resumen.productoId,
-            resumen.descripcion,
-            resumen.cantidad,
-            resumen.total
-        ))
-        .toList();
+    return facturaRepository.findProductosMasVendidos(empresaId, desde, hoy, FacturaEstado.AUTORIZADA, 5);
   }
 
   private List<DashboardProductoStockBajoResult> buildProductosMenosStock(Long empresaId) {
-    List<Inventario> inventarios = inventarioRepository.findByEmpresaId(empresaId);
+    List<Inventario> inventarios = timed("inventario.fetch",
+        () -> inventarioRepository.findByEmpresaId(empresaId));
     Map<Long, StockResumen> resumenes = new HashMap<>();
     for (Inventario inventario : inventarios) {
       StockResumen resumen = resumenes.computeIfAbsent(inventario.productoId(),
@@ -257,7 +223,7 @@ public class DashboardService implements ObtenerDashboardResumenUseCase {
       resumen.stockMinimo = resumen.stockMinimo.add(minimo);
     }
     Map<Long, String> descripciones = new HashMap<>();
-    for (Producto producto : productoRepository.findByEmpresaId(empresaId)) {
+    for (Producto producto : timed("productos.fetch", () -> productoRepository.findByEmpresaId(empresaId))) {
       descripciones.put(producto.id(), producto.descripcion());
     }
     return resumenes.values().stream()
@@ -272,60 +238,18 @@ public class DashboardService implements ObtenerDashboardResumenUseCase {
         .toList();
   }
 
-  private DashboardFacturaItemResult toFacturaItem(Factura factura) {
-    return new DashboardFacturaItemResult(
-        factura.id(),
-        buildNumeroFactura(factura.infoTributaria()),
-        factura.fechaEmision(),
-        factura.totales().importeTotal(),
-        factura.estado().name()
-    );
-  }
-
-  private String buildNumeroFactura(InfoTributariaData info) {
-    if (info == null) {
-      return "";
+  private <T> T timed(String label, Supplier<T> supplier) {
+    if (!timingEnabled) {
+      return supplier.get();
     }
-    String estab = info.estab() == null ? "" : info.estab();
-    String ptoEmi = info.ptoEmi() == null ? "" : info.ptoEmi();
-    String secuencial = info.secuencial() == null ? "" : info.secuencial();
-    return estab + "-" + ptoEmi + "-" + secuencial;
-  }
-
-  private List<Factura> fetchFacturas(Long empresaId, LocalDate desde, LocalDate hasta, int pageSize) {
-    List<Factura> results = new ArrayList<>();
-    int page = 0;
-    Page<Factura> pageResult;
-    do {
-      pageResult = facturaRepository.findByEmpresaIdAndFechaEmisionBetween(
-          empresaId,
-          desde,
-          hasta,
-          PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "fechaEmision").and(Sort.by("id")))
-      );
-      results.addAll(pageResult.getContent());
-      page++;
-    } while (pageResult.hasNext());
-    return results;
-  }
-
-  private long diasEntre(LocalDate desde, LocalDate hasta) {
-    return ChronoUnit.DAYS.between(desde, hasta);
-  }
-
-  private static final class ProductoResumen {
-    private final Long productoId;
-    private final String descripcion;
-    private BigDecimal cantidad = BigDecimal.ZERO;
-    private BigDecimal total = BigDecimal.ZERO;
-
-    private ProductoResumen(Long productoId, String descripcion) {
-      this.productoId = productoId;
-      this.descripcion = descripcion;
-    }
-
-    private BigDecimal getTotal() {
-      return total;
+    long startNs = System.nanoTime();
+    try {
+      return supplier.get();
+    } finally {
+      long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNs);
+      if (durationMs >= timingMinMs) {
+        log.info("dashboard {} ({} ms)", label, durationMs);
+      }
     }
   }
 

@@ -4,6 +4,8 @@ import ec.sgi.backend.application.port.out.CuentaPorPagarRepository;
 import ec.sgi.backend.domain.model.CuentaPorPagar;
 import ec.sgi.backend.infrastructure.persistence.entity.CuentaPorPagarEntity;
 import ec.sgi.backend.infrastructure.persistence.repository.CuentaPorPagarJpaRepository;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -56,6 +58,22 @@ public class CuentaPorPagarRepositoryAdapter implements CuentaPorPagarRepository
     return cuentaPorPagarJpaRepository.findByProveedorIdAndEmpresaId(proveedorId, empresaId).stream()
         .map(this::toDomain)
         .toList();
+  }
+
+  @Override
+  public BigDecimal sumSaldoPendienteByEmpresaId(Long empresaId, List<String> estadosExcluidos) {
+    return cuentaPorPagarJpaRepository.sumSaldoPendienteByEmpresaId(empresaId, estadosExcluidos);
+  }
+
+  @Override
+  public long countVencenEntreFechasByEmpresaId(
+      Long empresaId,
+      LocalDate fechaDesde,
+      LocalDate fechaHasta,
+      List<String> estadosExcluidos
+  ) {
+    return cuentaPorPagarJpaRepository.countVencenEntreFechasByEmpresaId(
+        empresaId, fechaDesde, fechaHasta, estadosExcluidos);
   }
 
   private CuentaPorPagar toDomain(CuentaPorPagarEntity entity) {

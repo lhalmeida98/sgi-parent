@@ -1,6 +1,8 @@
 package ec.sgi.backend.application.port.out;
 
 import ec.sgi.backend.domain.model.CobroCliente;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,4 +16,8 @@ public interface CobroClienteRepository {
   List<CobroCliente> findByEmpresaId(Long empresaId);
 
   List<CobroCliente> findByClienteId(Long clienteId);
+
+  List<FechaTotal> sumMontosPorFecha(Long empresaId, LocalDate fechaDesde, LocalDate fechaHasta);
+
+  record FechaTotal(LocalDate fecha, BigDecimal total) {}
 }

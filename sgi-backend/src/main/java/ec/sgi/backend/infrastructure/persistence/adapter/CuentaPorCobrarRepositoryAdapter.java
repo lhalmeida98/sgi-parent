@@ -4,6 +4,8 @@ import ec.sgi.backend.application.port.out.CuentaPorCobrarRepository;
 import ec.sgi.backend.domain.model.CuentaPorCobrar;
 import ec.sgi.backend.infrastructure.persistence.entity.CuentaPorCobrarEntity;
 import ec.sgi.backend.infrastructure.persistence.repository.CuentaPorCobrarJpaRepository;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -56,6 +58,21 @@ public class CuentaPorCobrarRepositoryAdapter implements CuentaPorCobrarReposito
     return cuentaPorCobrarJpaRepository.findByClienteIdAndEmpresaId(clienteId, empresaId).stream()
         .map(this::toDomain)
         .toList();
+  }
+
+  @Override
+  public BigDecimal sumSaldoPendienteByEmpresaId(Long empresaId, List<String> estadosExcluidos) {
+    return cuentaPorCobrarJpaRepository.sumSaldoPendienteByEmpresaId(empresaId, estadosExcluidos);
+  }
+
+  @Override
+  public long countPendientesByEmpresaIdAndFechaVencimiento(
+      Long empresaId,
+      LocalDate fechaVencimiento,
+      List<String> estadosExcluidos
+  ) {
+    return cuentaPorCobrarJpaRepository.countPendientesByEmpresaIdAndFechaVencimiento(
+        empresaId, fechaVencimiento, estadosExcluidos);
   }
 
   private CuentaPorCobrar toDomain(CuentaPorCobrarEntity entity) {

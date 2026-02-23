@@ -6,6 +6,7 @@ import ec.sgi.backend.domain.model.CobroClienteDetalle;
 import ec.sgi.backend.infrastructure.persistence.entity.CobroClienteDetalleEntity;
 import ec.sgi.backend.infrastructure.persistence.entity.CobroClienteEntity;
 import ec.sgi.backend.infrastructure.persistence.repository.CobroClienteJpaRepository;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +47,17 @@ public class CobroClienteRepositoryAdapter implements CobroClienteRepository {
   public List<CobroCliente> findByClienteId(Long clienteId) {
     return cobroClienteJpaRepository.findByClienteId(clienteId).stream()
         .map(this::toDomain)
+        .toList();
+  }
+
+  @Override
+  public List<CobroClienteRepository.FechaTotal> sumMontosPorFecha(
+      Long empresaId,
+      LocalDate fechaDesde,
+      LocalDate fechaHasta
+  ) {
+    return cobroClienteJpaRepository.sumMontosPorFecha(empresaId, fechaDesde, fechaHasta).stream()
+        .map(projection -> new CobroClienteRepository.FechaTotal(projection.getFecha(), projection.getTotal()))
         .toList();
   }
 

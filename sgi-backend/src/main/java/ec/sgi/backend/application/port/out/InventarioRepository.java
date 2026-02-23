@@ -22,4 +22,6 @@ public interface InventarioRepository {
   List<Inventario> findAll();
 
   List<Inventario> findByEmpresaId(Long empresaId);
+
+  long countStockCriticoByEmpresaId(Long empresaId);
 }

@@ -73,6 +73,11 @@ public class InventarioRepositoryAdapter implements InventarioRepository {
         .toList();
   }
 
+  @Override
+  public long countStockCriticoByEmpresaId(Long empresaId) {
+    return inventarioJpaRepository.countStockCriticoByEmpresaId(empresaId);
+  }
+
   private Inventario toDomain(InventarioEntity entity) {
     BigDecimal reservado = entity.getStockReservado() == null ? BigDecimal.ZERO : entity.getStockReservado();
     return new Inventario(

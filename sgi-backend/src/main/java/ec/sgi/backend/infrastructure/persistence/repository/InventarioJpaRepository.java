@@ -1,7 +1,6 @@
 package ec.sgi.backend.infrastructure.persistence.repository;
 
 import ec.sgi.backend.infrastructure.persistence.entity.InventarioEntity;
-import java.util.Optional;
 import jakarta.persistence.LockModeType;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -37,4 +36,13 @@ public interface InventarioJpaRepository extends JpaRepository<InventarioEntity,
   java.util.List<InventarioEntity> findByEmpresaIdAndBodegaId(Long empresaId, Long bodegaId);
 
   Optional<InventarioEntity> findByProductoIdAndEmpresaIdAndBodegaId(Long productoId, Long empresaId, Long bodegaId);
+
+  @Query("""
+      select count(i)
+      from InventarioEntity i
+      where i.empresaId = :empresaId
+        and i.stockMinimo is not null
+        and i.stockActual <= i.stockMinimo
+      """)
+  long countStockCriticoByEmpresaId(@Param("empresaId") Long empresaId);
 }

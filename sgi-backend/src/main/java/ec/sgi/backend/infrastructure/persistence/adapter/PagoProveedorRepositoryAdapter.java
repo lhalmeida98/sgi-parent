@@ -6,6 +6,7 @@ import ec.sgi.backend.domain.model.PagoProveedorDetalle;
 import ec.sgi.backend.infrastructure.persistence.entity.PagoProveedorDetalleEntity;
 import ec.sgi.backend.infrastructure.persistence.entity.PagoProveedorEntity;
 import ec.sgi.backend.infrastructure.persistence.repository.PagoProveedorJpaRepository;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +47,17 @@ public class PagoProveedorRepositoryAdapter implements PagoProveedorRepository {
   public List<PagoProveedor> findByProveedorId(Long proveedorId) {
     return pagoProveedorJpaRepository.findByProveedorId(proveedorId).stream()
         .map(this::toDomain)
+        .toList();
+  }
+
+  @Override
+  public List<PagoProveedorRepository.FechaTotal> sumMontosPorFecha(
+      Long empresaId,
+      LocalDate fechaDesde,
+      LocalDate fechaHasta
+  ) {
+    return pagoProveedorJpaRepository.sumMontosPorFecha(empresaId, fechaDesde, fechaHasta).stream()
+        .map(projection -> new PagoProveedorRepository.FechaTotal(projection.getFecha(), projection.getTotal()))
         .toList();
   }
 

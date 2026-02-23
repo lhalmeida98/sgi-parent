@@ -1,6 +1,8 @@
 package ec.sgi.backend.application.port.out;
 
 import ec.sgi.backend.domain.model.CuentaPorCobrar;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,4 +20,12 @@ public interface CuentaPorCobrarRepository {
   List<CuentaPorCobrar> findByClienteId(Long clienteId);
 
   List<CuentaPorCobrar> findByClienteIdAndEmpresaId(Long clienteId, Long empresaId);
+
+  BigDecimal sumSaldoPendienteByEmpresaId(Long empresaId, List<String> estadosExcluidos);
+
+  long countPendientesByEmpresaIdAndFechaVencimiento(
+      Long empresaId,
+      LocalDate fechaVencimiento,
+      List<String> estadosExcluidos
+  );
 }
