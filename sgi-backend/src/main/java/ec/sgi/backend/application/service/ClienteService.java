@@ -2,6 +2,9 @@ package ec.sgi.backend.application.service;
 
 import ec.sgi.backend.application.dto.ClienteCreateResult;
 import ec.sgi.backend.application.dto.ClienteResult;
+import ec.sgi.backend.application.exception.ResourceNotFoundException;
+import ec.sgi.backend.application.port.in.ActualizarClienteCommand;
+import ec.sgi.backend.application.port.in.ActualizarClienteUseCase;
 import ec.sgi.backend.application.port.in.CrearClienteCommand;
 import ec.sgi.backend.application.port.in.CrearClienteUseCase;
 import ec.sgi.backend.application.port.in.ListarClientesUseCase;
@@ -13,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
-public class ClienteService implements CrearClienteUseCase, ListarClientesUseCase {
+public class ClienteService implements CrearClienteUseCase, ListarClientesUseCase, ActualizarClienteUseCase {
   private final ClienteRepository clienteRepository;
 
   public ClienteService(ClienteRepository clienteRepository) {
@@ -41,6 +44,24 @@ public class ClienteService implements CrearClienteUseCase, ListarClientesUseCas
     return clienteRepository.findByEmpresaId(empresaId).stream()
         .map(this::toResult)
         .toList();
+  }
+
+  @Override
+  public ClienteResult actualizar(Long empresaId, Long clienteId, ActualizarClienteCommand command) {
+    Cliente existente = clienteRepository.findByIdAndEmpresaId(clienteId, empresaId)
+        .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado"));
+    Cliente actualizado = new Cliente(
+        existente.id(),
+        existente.empresaId(),
+        command.tipoIdentificacion(),
+        command.identificacion(),
+        command.razonSocial(),
+        command.email(),
+        command.direccion(),
+        command.creditoDias()
+    );
+    Cliente guardado = clienteRepository.save(actualizado);
+    return toResult(guardado);
   }
 
   private ClienteResult toResult(Cliente cliente) {
