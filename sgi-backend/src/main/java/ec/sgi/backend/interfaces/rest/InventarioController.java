@@ -5,6 +5,9 @@ import ec.sgi.backend.application.dto.InventarioCreateResult;
 import ec.sgi.backend.application.dto.InventarioDetalleResult;
 import ec.sgi.backend.application.dto.InventarioProductoDisponibleResult;
 import ec.sgi.backend.application.dto.InventarioResumenResult;
+import ec.sgi.backend.application.dto.InventarioUpdateRequest;
+import ec.sgi.backend.application.port.in.ActualizarInventarioCommand;
+import ec.sgi.backend.application.port.in.ActualizarInventarioUseCase;
 import ec.sgi.backend.application.port.in.BuscarProductoDisponiblePorBodegaUseCase;
 import ec.sgi.backend.application.port.in.BuscarProductoDisponiblePorIdUseCase;
 import ec.sgi.backend.application.port.in.ConsultarInventarioProductoBodegaUseCase;
@@ -27,6 +30,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -37,6 +41,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Inventario", description = "Gestion de inventarios.")
 public class InventarioController {
   private final CrearInventarioUseCase crearInventarioUseCase;
+  private final ActualizarInventarioUseCase actualizarInventarioUseCase;
   private final ListarInventarioUseCase listarInventarioUseCase;
   private final ConsultarInventarioProductoBodegaUseCase consultarInventarioProductoBodegaUseCase;
   private final ListarProductosDisponiblesPorBodegaUseCase listarProductosDisponiblesPorBodegaUseCase;
@@ -47,6 +52,7 @@ public class InventarioController {
 
   public InventarioController(
       CrearInventarioUseCase crearInventarioUseCase,
+      ActualizarInventarioUseCase actualizarInventarioUseCase,
       ListarInventarioUseCase listarInventarioUseCase,
       ConsultarInventarioProductoBodegaUseCase consultarInventarioProductoBodegaUseCase,
       ListarProductosDisponiblesPorBodegaUseCase listarProductosDisponiblesPorBodegaUseCase,
@@ -56,6 +62,7 @@ public class InventarioController {
       PermisoService permisoService
   ) {
     this.crearInventarioUseCase = crearInventarioUseCase;
+    this.actualizarInventarioUseCase = actualizarInventarioUseCase;
     this.listarInventarioUseCase = listarInventarioUseCase;
     this.consultarInventarioProductoBodegaUseCase = consultarInventarioProductoBodegaUseCase;
     this.listarProductosDisponiblesPorBodegaUseCase = listarProductosDisponiblesPorBodegaUseCase;
@@ -88,6 +95,38 @@ public class InventarioController {
         request.costoPromedio()
     ));
     return ResponseEntity.status(HttpStatus.CREATED).body(result);
+  }
+
+  @PutMapping("/producto/{productoId}/bodega/{bodegaId}")
+  @Operation(summary = "Actualizar inventario", description = "Actualiza el inventario de un producto en una bodega.")
+  @SecurityRequirement(name = "bearerAuth")
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Inventario actualizado"),
+      @ApiResponse(responseCode = "400", description = "Validacion invalida"),
+      @ApiResponse(responseCode = "401", description = "No autorizado"),
+      @ApiResponse(responseCode = "403", description = "Sin permisos"),
+      @ApiResponse(responseCode = "404", description = "Inventario no encontrado")
+  })
+  public ResponseEntity<InventarioDetalleResult> actualizar(
+      @Parameter(description = "ID del producto") @PathVariable Long productoId,
+      @Parameter(description = "ID de la bodega") @PathVariable Long bodegaId,
+      @Valid @RequestBody InventarioUpdateRequest request
+  ) {
+    permisoService.requirePermiso("INVENTARIOS");
+    Long empresaId = currentUserService.getEmpresaId();
+    InventarioDetalleResult result = actualizarInventarioUseCase.actualizar(
+        empresaId,
+        productoId,
+        bodegaId,
+        new ActualizarInventarioCommand(
+            request.stockActual(),
+            request.stockMinimo(),
+            request.stockMaximo(),
+            request.ubicacion(),
+            request.costoPromedio()
+        )
+    );
+    return ResponseEntity.ok(result);
   }
 
   @GetMapping

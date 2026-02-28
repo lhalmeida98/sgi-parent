@@ -24,3 +24,6 @@ Thumbs.db
 # Node / frontend (if any)
 **/node_modules
 
+# Local uploaded assets and certificates
+storage
+**/storage

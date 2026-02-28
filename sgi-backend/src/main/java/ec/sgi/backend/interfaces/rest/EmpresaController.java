@@ -5,16 +5,18 @@ import ec.sgi.backend.application.dto.EmpresaCreateResult;
 import ec.sgi.backend.application.dto.EmpresaResult;
 import ec.sgi.backend.application.dto.EmpresaUpdateRequest;
 import ec.sgi.backend.application.dto.FirmaElectronicaResult;
+import ec.sgi.backend.application.dto.UsuarioEmpresaDetalleResult;
 import ec.sgi.backend.application.exception.BusinessRuleException;
 import ec.sgi.backend.application.port.in.ActualizarEmpresaCommand;
 import ec.sgi.backend.application.port.in.ActualizarEmpresaUseCase;
 import ec.sgi.backend.application.port.in.CrearEmpresaCommand;
 import ec.sgi.backend.application.port.in.CrearEmpresaUseCase;
-import ec.sgi.backend.application.port.in.ListarEmpresasUseCase;
+import ec.sgi.backend.application.port.in.ListarEmpresasUsuarioUseCase;
 import ec.sgi.backend.application.port.in.SubirFirmaElectronicaCommand;
 import ec.sgi.backend.application.port.in.SubirFirmaElectronicaUseCase;
 import ec.sgi.backend.application.port.in.SubirLogoEmpresaCommand;
 import ec.sgi.backend.application.port.in.SubirLogoEmpresaUseCase;
+import ec.sgi.backend.security.CurrentUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -41,23 +43,26 @@ import org.springframework.web.multipart.MultipartFile;
 @Tag(name = "Empresas", description = "Gestion de empresas.")
 public class EmpresaController {
   private final CrearEmpresaUseCase crearEmpresaUseCase;
-  private final ListarEmpresasUseCase listarEmpresasUseCase;
+  private final ListarEmpresasUsuarioUseCase listarEmpresasUsuarioUseCase;
   private final SubirFirmaElectronicaUseCase subirFirmaElectronicaUseCase;
   private final ActualizarEmpresaUseCase actualizarEmpresaUseCase;
   private final SubirLogoEmpresaUseCase subirLogoEmpresaUseCase;
+  private final CurrentUserService currentUserService;
 
   public EmpresaController(
       CrearEmpresaUseCase crearEmpresaUseCase,
-      ListarEmpresasUseCase listarEmpresasUseCase,
+      ListarEmpresasUsuarioUseCase listarEmpresasUsuarioUseCase,
       SubirFirmaElectronicaUseCase subirFirmaElectronicaUseCase,
       ActualizarEmpresaUseCase actualizarEmpresaUseCase,
-      SubirLogoEmpresaUseCase subirLogoEmpresaUseCase
+      SubirLogoEmpresaUseCase subirLogoEmpresaUseCase,
+      CurrentUserService currentUserService
   ) {
     this.crearEmpresaUseCase = crearEmpresaUseCase;
-    this.listarEmpresasUseCase = listarEmpresasUseCase;
+    this.listarEmpresasUsuarioUseCase = listarEmpresasUsuarioUseCase;
     this.subirFirmaElectronicaUseCase = subirFirmaElectronicaUseCase;
     this.actualizarEmpresaUseCase = actualizarEmpresaUseCase;
     this.subirLogoEmpresaUseCase = subirLogoEmpresaUseCase;
+    this.currentUserService = currentUserService;
   }
 
   @PostMapping
@@ -88,7 +93,7 @@ public class EmpresaController {
   }
 
   @GetMapping
-  @Operation(summary = "Listar empresas", description = "Lista empresas registradas.")
+  @Operation(summary = "Listar empresas", description = "Lista empresas asignadas al usuario autenticado.")
   @SecurityRequirement(name = "bearerAuth")
   @ApiResponses({
       @ApiResponse(responseCode = "200", description = "Listado de empresas"),
@@ -96,7 +101,12 @@ public class EmpresaController {
       @ApiResponse(responseCode = "403", description = "Sin permisos")
   })
   public ResponseEntity<List<EmpresaResult>> listar() {
-    return ResponseEntity.ok(listarEmpresasUseCase.listar());
+    Long empresaId = currentUserService.isAdmin() ? null : currentUserService.getEmpresaId();
+    Long usuarioId = currentUserService.getUsuarioId();
+    List<EmpresaResult> empresas = listarEmpresasUsuarioUseCase.listarEmpresas(empresaId, usuarioId).stream()
+        .map(UsuarioEmpresaDetalleResult::empresa)
+        .toList();
+    return ResponseEntity.ok(empresas);
   }
 
   @PutMapping("/{empresaId}")

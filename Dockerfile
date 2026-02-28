@@ -29,4 +29,6 @@ COPY --from=build /workspace/app.jar /app/app.jar
 EXPOSE 8080
 
 # Run the application
-ENTRYPOINT ["java","-jar","/app/app.jar"]
+ENV JAVA_OPTS="-Xms128m -Xmx384m"
+ENTRYPOINT ["sh","-c","java $JAVA_OPTS -jar /app/app.jar"]
+#ENTRYPOINT ["java","-jar","/app/app.jar"]

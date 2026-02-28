@@ -10,5 +10,7 @@ public interface ProveedorJpaRepository extends JpaRepository<ProveedorEntity, L
 
   Optional<ProveedorEntity> findByIdAndEmpresaId(Long id, Long empresaId);
 
+  Optional<ProveedorEntity> findByEmpresaIdAndIdentificacion(Long empresaId, String identificacion);
+
   boolean existsByEmpresaIdAndIdentificacion(Long empresaId, String identificacion);
 }

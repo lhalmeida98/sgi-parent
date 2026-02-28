@@ -9,6 +9,9 @@ public record ProductoResult(
     BigDecimal precioUnitario,
     Long categoriaId,
     Long impuestoId,
+    Long proveedorId,
+    String proveedorRuc,
+    String proveedorNombre,
     boolean vendible,
     String codigoBarras
 ) {

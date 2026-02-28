@@ -113,7 +113,7 @@ public class DocumentoProveedorService implements CrearDocumentoProveedorUseCase
     String tipo = normalizarTipo(command.tipoDocumento());
     validarDocumentoUnico(command.empresaId(), proveedor.id(), command.numeroDocumento(), command.numeroAutorizacion());
     LocalDate fechaVencimiento = calcularFechaVencimiento(command.fechaEmision(), command.fechaVencimiento(), proveedor);
-    List<DocumentoProveedorItem> items = mapItems(command.empresaId(), command.items());
+    List<DocumentoProveedorItem> items = mapItems(command.empresaId(), proveedor.id(), command.items());
     if (TIPO_FACTURA.equals(tipo) && items.isEmpty()) {
       throw new BusinessRuleException("Factura de proveedor requiere items para actualizar inventario");
     }
@@ -461,7 +461,7 @@ public class DocumentoProveedorService implements CrearDocumentoProveedorUseCase
     return fechaEmision;
   }
 
-  private List<DocumentoProveedorItem> mapItems(Long empresaId, List<DocumentoProveedorItemCommand> items) {
+  private List<DocumentoProveedorItem> mapItems(Long empresaId, Long proveedorId, List<DocumentoProveedorItemCommand> items) {
     if (items == null || items.isEmpty()) {
       return List.of();
     }
@@ -472,7 +472,7 @@ public class DocumentoProveedorService implements CrearDocumentoProveedorUseCase
         throw new BusinessRuleException("Bodega requerida para registrar items");
       }
       ensureBodegaExists(empresaId, bodegaId);
-      Long productoId = resolveOrCreateProductoId(empresaId, item);
+      Long productoId = resolveOrCreateProductoId(empresaId, proveedorId, item);
       mapped.add(new DocumentoProveedorItem(
           null,
           bodegaId,
@@ -500,7 +500,7 @@ public class DocumentoProveedorService implements CrearDocumentoProveedorUseCase
         .orElse(null);
   }
 
-  private Long resolveOrCreateProductoId(Long empresaId, DocumentoProveedorItemCommand item) {
+  private Long resolveOrCreateProductoId(Long empresaId, Long proveedorId, DocumentoProveedorItemCommand item) {
     if (item.productoId() != null) {
       Producto producto = productoRepository.findByIdAndEmpresaId(item.productoId(), empresaId).orElse(null);
       if (producto == null) {
@@ -528,6 +528,7 @@ public class DocumentoProveedorService implements CrearDocumentoProveedorUseCase
         precioVenta,
         categoriaId,
         impuestoId,
+        proveedorId,
         true,
         null
     );
@@ -580,6 +581,7 @@ public class DocumentoProveedorService implements CrearDocumentoProveedorUseCase
         precioVenta,
         producto.categoriaId(),
         producto.impuestoId(),
+        producto.proveedorId(),
         producto.vendible(),
         producto.codigoBarras()
     );

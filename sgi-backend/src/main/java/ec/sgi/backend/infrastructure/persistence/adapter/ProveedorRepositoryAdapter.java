@@ -33,6 +33,11 @@ public class ProveedorRepositoryAdapter implements ProveedorRepository {
   }
 
   @Override
+  public Optional<Proveedor> findByEmpresaIdAndIdentificacion(Long empresaId, String identificacion) {
+    return proveedorJpaRepository.findByEmpresaIdAndIdentificacion(empresaId, identificacion).map(this::toDomain);
+  }
+
+  @Override
   public List<Proveedor> findByEmpresaId(Long empresaId) {
     return proveedorJpaRepository.findByEmpresaId(empresaId).stream()
         .map(this::toDomain)

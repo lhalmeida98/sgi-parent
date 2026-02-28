@@ -7,6 +7,8 @@ import ec.sgi.backend.application.dto.InventarioProductoDisponibleResult;
 import ec.sgi.backend.application.dto.InventarioResumenResult;
 import ec.sgi.backend.application.exception.BusinessRuleException;
 import ec.sgi.backend.application.exception.ResourceNotFoundException;
+import ec.sgi.backend.application.port.in.ActualizarInventarioCommand;
+import ec.sgi.backend.application.port.in.ActualizarInventarioUseCase;
 import ec.sgi.backend.application.port.in.CrearInventarioCommand;
 import ec.sgi.backend.application.port.in.CrearInventarioUseCase;
 import ec.sgi.backend.application.port.in.BuscarProductoDisponiblePorBodegaUseCase;
@@ -33,7 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional
 public class InventarioService implements CrearInventarioUseCase, ListarInventarioUseCase,
-    ConsultarInventarioProductoBodegaUseCase, ListarProductosDisponiblesPorBodegaUseCase,
+    ConsultarInventarioProductoBodegaUseCase, ActualizarInventarioUseCase, ListarProductosDisponiblesPorBodegaUseCase,
     BuscarProductoDisponiblePorBodegaUseCase, BuscarProductoDisponiblePorIdUseCase {
   private final InventarioRepository inventarioRepository;
   private final ProductoRepository productoRepository;
@@ -80,6 +82,49 @@ public class InventarioService implements CrearInventarioUseCase, ListarInventar
     );
     Inventario guardado = inventarioRepository.save(inventario);
     return new InventarioCreateResult(guardado.id());
+  }
+
+  @Override
+  public InventarioDetalleResult actualizar(
+      Long empresaId,
+      Long productoId,
+      Long bodegaId,
+      ActualizarInventarioCommand command
+  ) {
+    if (command.stockActual().compareTo(BigDecimal.ZERO) < 0) {
+      throw new BusinessRuleException("Stock actual invalido");
+    }
+    if (command.stockMinimo().compareTo(BigDecimal.ZERO) < 0) {
+      throw new BusinessRuleException("Stock minimo invalido");
+    }
+    if (command.stockMaximo() != null && command.stockMaximo().compareTo(BigDecimal.ZERO) < 0) {
+      throw new BusinessRuleException("Stock maximo invalido");
+    }
+    if (command.costoPromedio() != null && command.costoPromedio().compareTo(BigDecimal.ZERO) < 0) {
+      throw new BusinessRuleException("Costo promedio invalido");
+    }
+
+    Inventario inventario = inventarioRepository.findByProductoIdAndEmpresaIdAndBodegaIdForUpdate(
+        productoId,
+        empresaId,
+        bodegaId
+    ).orElseThrow(() -> new ResourceNotFoundException("Inventario no encontrado"));
+
+    Inventario actualizado = new Inventario(
+        inventario.id(),
+        inventario.empresaId(),
+        inventario.bodegaId(),
+        inventario.productoId(),
+        command.stockActual(),
+        inventario.stockReservado(),
+        command.stockMinimo(),
+        command.stockMaximo(),
+        command.ubicacion(),
+        command.costoPromedio(),
+        LocalDateTime.now()
+    );
+    inventarioRepository.save(actualizado);
+    return consultar(empresaId, productoId, bodegaId);
   }
 
   @Override

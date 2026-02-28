@@ -11,6 +11,8 @@ public interface ProveedorRepository {
 
   Optional<Proveedor> findByIdAndEmpresaId(Long id, Long empresaId);
 
+  Optional<Proveedor> findByEmpresaIdAndIdentificacion(Long empresaId, String identificacion);
+
   List<Proveedor> findByEmpresaId(Long empresaId);
 
   boolean existsByEmpresaIdAndIdentificacion(Long empresaId, String identificacion);

@@ -165,8 +165,11 @@ public class UsuarioService implements CrearUsuarioUseCase, ListarUsuariosUseCas
 
   @Override
   public List<UsuarioEmpresaDetalleResult> listarEmpresas(Long empresaId, Long usuarioId) {
-    Usuario usuario = usuarioRepository.findByIdAndEmpresaId(usuarioId, empresaId)
-        .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+    Usuario usuario = (empresaId == null)
+        ? usuarioRepository.findById(usuarioId)
+            .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"))
+        : usuarioRepository.findByIdAndEmpresaId(usuarioId, empresaId)
+            .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
     List<UsuarioEmpresa> empresas = usuario.empresas();
     if (empresas == null || empresas.isEmpty()) {
       return List.of();

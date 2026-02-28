@@ -82,6 +82,9 @@ public class ProductoController {
         request.precioUnitario(),
         request.categoriaId(),
         request.impuestoId(),
+        request.proveedorId(),
+        request.bodegaId(),
+        request.costo(),
         request.vendible(),
         request.codigoBarras()
     ));

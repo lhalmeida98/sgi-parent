@@ -9,6 +9,9 @@ public record CrearProductoCommand(
     BigDecimal precioUnitario,
     Long categoriaId,
     Long impuestoId,
+    Long proveedorId,
+    Long bodegaId,
+    BigDecimal costo,
     Boolean vendible,
     String codigoBarras
 ) {
@@ -19,5 +22,7 @@ public record CrearProductoCommand(
     java.util.Objects.requireNonNull(precioUnitario, "precioUnitario");
     java.util.Objects.requireNonNull(categoriaId, "categoriaId");
     java.util.Objects.requireNonNull(impuestoId, "impuestoId");
+    java.util.Objects.requireNonNull(bodegaId, "bodegaId");
+    java.util.Objects.requireNonNull(costo, "costo");
   }
 }
