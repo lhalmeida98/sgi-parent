@@ -32,4 +32,27 @@ class FacturaTotalsCalculatorTest {
     assertThat(result.totales().importeTotal()).isEqualByComparingTo("21.28");
     assertThat(result.impuestosTotales()).hasSize(1);
   }
+
+  @Test
+  void calculaIvaSinSubirCentavoCuandoElTercerDecimalRedondeariaArriba() {
+    FacturaTotalsCalculator calculator = new FacturaTotalsCalculator();
+    ItemCalculo item = new ItemCalculo(
+        null,
+        1L,
+        "P-001",
+        "Producto A",
+        new BigDecimal("1"),
+        new BigDecimal("9.57"),
+        new BigDecimal("0.00"),
+        "2",
+        "4",
+        new BigDecimal("15.00")
+    );
+
+    FacturaCalculoResult result = calculator.calcular(List.of(item));
+
+    assertThat(result.totales().totalSinImpuestos()).isEqualByComparingTo("9.57");
+    assertThat(result.totales().totalImpuestos()).isEqualByComparingTo("1.43");
+    assertThat(result.totales().importeTotal()).isEqualByComparingTo("11.00");
+  }
 }

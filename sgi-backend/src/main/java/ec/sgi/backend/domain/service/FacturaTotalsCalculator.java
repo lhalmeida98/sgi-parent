@@ -13,6 +13,8 @@ import java.util.Map;
 
 public class FacturaTotalsCalculator {
   private static final int SCALE = 2;
+  private static final RoundingMode MONEY_ROUNDING = RoundingMode.HALF_UP;
+  private static final RoundingMode TAX_ROUNDING = RoundingMode.DOWN;
 
   public FacturaCalculoResult calcular(List<ItemCalculo> items) {
     List<FacturaItem> detalles = new ArrayList<>();
@@ -26,8 +28,8 @@ public class FacturaTotalsCalculator {
       BigDecimal subtotal = scale(item.precioUnitario().multiply(item.cantidad()));
       BigDecimal descuento = scale(item.descuento());
       BigDecimal baseImponible = scale(subtotal.subtract(descuento));
-      BigDecimal impuestoValor = scale(baseImponible.multiply(item.impuestoTarifa())
-          .divide(BigDecimal.valueOf(100), SCALE, RoundingMode.HALF_UP));
+      BigDecimal impuestoValor = scaleTax(baseImponible.multiply(item.impuestoTarifa())
+          .divide(BigDecimal.valueOf(100), SCALE, TAX_ROUNDING));
 
       FacturaImpuesto impuesto = new FacturaImpuesto(
           item.impuestoCodigo(),
@@ -89,6 +91,10 @@ public class FacturaTotalsCalculator {
   }
 
   private BigDecimal scale(BigDecimal value) {
-    return value.setScale(SCALE, RoundingMode.HALF_UP);
+    return value.setScale(SCALE, MONEY_ROUNDING);
+  }
+
+  private BigDecimal scaleTax(BigDecimal value) {
+    return value.setScale(SCALE, TAX_ROUNDING);
   }
 }

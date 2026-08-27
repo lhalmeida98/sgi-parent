@@ -155,8 +155,9 @@ public class UsuarioController {
   public ResponseEntity<List<UsuarioEmpresaDetalleResult>> listarEmpresas(
       @Parameter(description = "ID del usuario") @PathVariable Long usuarioId
   ) {
+    Long empresaId = currentUserService.isAdmin() ? null : currentUserService.getEmpresaId();
     return ResponseEntity.ok(
-        listarEmpresasUsuarioUseCase.listarEmpresas(currentUserService.getEmpresaId(), usuarioId)
+        listarEmpresasUsuarioUseCase.listarEmpresas(empresaId, usuarioId)
     );
   }
 
