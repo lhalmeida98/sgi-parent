@@ -7,6 +7,8 @@ import java.util.List;
 public record SriInfoFacturaDto(
     LocalDate fechaEmision,
     String dirEstablecimiento,
+    String contribuyenteEspecial,
+    String obligadoContabilidad,
     String tipoIdentificacionComprador,
     String razonSocialComprador,
     String identificacionComprador,

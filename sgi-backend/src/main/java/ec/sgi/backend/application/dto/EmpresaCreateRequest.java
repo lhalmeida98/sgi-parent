@@ -13,7 +13,44 @@ public record EmpresaCreateRequest(
     @NotBlank String ptoEmi,
     @NotBlank String secuencial,
     Boolean obligadoContabilidad,
+    String regimenTributario,
     Boolean regimenRimpe,
+    Boolean contribuyenteEspecial,
+    String numeroContribuyenteEspecial,
+    Boolean agenteRetencion,
     Integer creditoDiasDefault
 ) {
+  public EmpresaCreateRequest(
+      String ambiente,
+      String tipoEmision,
+      String razonSocial,
+      String nombreComercial,
+      String ruc,
+      String dirMatriz,
+      String estab,
+      String ptoEmi,
+      String secuencial,
+      Boolean obligadoContabilidad,
+      Boolean regimenRimpe,
+      Integer creditoDiasDefault
+  ) {
+    this(
+        ambiente,
+        tipoEmision,
+        razonSocial,
+        nombreComercial,
+        ruc,
+        dirMatriz,
+        estab,
+        ptoEmi,
+        secuencial,
+        obligadoContabilidad,
+        null,
+        regimenRimpe,
+        false,
+        null,
+        false,
+        creditoDiasDefault
+    );
+  }
 }

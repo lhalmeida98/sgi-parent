@@ -1,5 +1,6 @@
 package ec.sgi.backend.application.port.in;
 
+import ec.sgi.backend.domain.model.RegimenTributario;
 import java.util.Objects;
 
 public record CrearEmpresaCommand(
@@ -13,7 +14,10 @@ public record CrearEmpresaCommand(
     String ptoEmi,
     String secuencial,
     boolean obligadoContabilidad,
-    boolean regimenRimpe,
+    RegimenTributario regimenTributario,
+    boolean contribuyenteEspecial,
+    String numeroContribuyenteEspecial,
+    boolean agenteRetencion,
     Integer creditoDiasDefault
 ) {
   public CrearEmpresaCommand {

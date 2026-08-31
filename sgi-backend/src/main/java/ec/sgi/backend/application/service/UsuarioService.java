@@ -341,7 +341,11 @@ public class UsuarioService implements CrearUsuarioUseCase, ListarUsuariosUseCas
         empresa.secuencial(),
         empresa.logoRuta(),
         empresa.obligadoContabilidad(),
+        empresa.regimenTributario().name(),
         empresa.regimenRimpe(),
+        empresa.contribuyenteEspecial(),
+        empresa.numeroContribuyenteEspecial(),
+        empresa.agenteRetencion(),
         empresa.creditoDiasDefault()
     );
   }

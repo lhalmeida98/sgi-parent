@@ -329,7 +329,11 @@ public class SriSoapClient implements SriClient, SriConsultaClient, SriLoteClien
       if (isProcesamientoSri(doc)) {
         return SriResponse.enProceso();
       }
-      return SriResponse.noAutorizado(mensajesOrDefault(doc, "Comprobante devuelto por SRI"));
+      String mensaje = mensajesOrDefault(doc, "Comprobante devuelto por SRI");
+      if (isClaveAccesoRegistrada(doc) || containsClaveAccesoRegistrada(mensaje)) {
+        return SriResponse.enProceso(mensaje);
+      }
+      return SriResponse.noAutorizado(mensaje);
     }
     if ("RECHAZADO".equals(normalized) || "RECHAZADA".equals(normalized)) {
       return SriResponse.noAutorizado(mensajesOrDefault(doc, "Comprobante devuelto por SRI"));
@@ -388,6 +392,7 @@ public class SriSoapClient implements SriClient, SriConsultaClient, SriLoteClien
         estadoConsulta,
         estadoAutorizacion,
         firstElementText(doc, "claveAcceso"),
+        firstElementText(doc, "numeroAutorizacion"),
         firstElementText(doc, "rucEmisor"),
         firstElementText(doc, "tipoComprobante"),
         firstElementText(doc, "fechaAutorizacion"),
@@ -693,6 +698,38 @@ public class SriSoapClient implements SriClient, SriConsultaClient, SriLoteClien
       }
     }
     return false;
+  }
+
+  private boolean isClaveAccesoRegistrada(Document doc) {
+    NodeList nodes = messageNodes(doc);
+    if (nodes == null) {
+      return false;
+    }
+    for (int i = 0; i < nodes.getLength(); i++) {
+      Node node = nodes.item(i);
+      if (!(node instanceof Element element) || !hasChildElements(element)) {
+        continue;
+      }
+      String identificador = textFromDirectChild(element, "identificador");
+      if ("43".equals(trimToNull(identificador))) {
+        return true;
+      }
+      String mensaje = textFromDirectChild(element, "mensaje");
+      String info = textFromDirectChild(element, "informacionAdicional");
+      if (containsClaveAccesoRegistrada(mensaje) || containsClaveAccesoRegistrada(info)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean containsClaveAccesoRegistrada(String value) {
+    if (isBlank(value)) {
+      return false;
+    }
+    String normalized = value.trim().toUpperCase(Locale.ROOT);
+    return normalized.contains("CLAVE ACCESO REGISTRADA")
+        || normalized.contains("CLAVE DE ACCESO REGISTRADA");
   }
 
   private boolean containsProcesamiento(String value) {

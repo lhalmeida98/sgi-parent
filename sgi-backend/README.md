@@ -125,7 +125,8 @@ Configurable con:
 - `app.facturas.xml-firmado.store=true`
 - `app.facturas.xml-firmado.compress=true`
 
-Al autorizar, el XML firmado pasa a `xml_autorizado` (tambien comprimido) y se limpia `xml_firmado`.
+Al autorizar, `xml_firmado` conserva el XML enviado y `xml_autorizado` guarda el XML autorizado
+(tambien comprimido, si esta habilitado).
 Configurable con:
 - `app.facturas.xml-autorizado.compress=true`
 

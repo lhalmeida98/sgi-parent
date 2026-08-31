@@ -48,7 +48,7 @@ app:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:*,http://127.0.0.1:*,http://10.0.2.2:*,https://sgi-frontend.web.app}
   sri:
     client: soap
-    xmlVersion: "1.0.0"
+    xmlVersion: "2.1.0"
     contribuyente:
       enabled: true
       base-url: ${SRI_CONTRIBUYENTE_URL:https://srienlinea.sri.gob.ec/sri-catastro-sujeto-servicio-internet/rest/ConsolidadoContribuyente/obtenerPorNumerosRuc}

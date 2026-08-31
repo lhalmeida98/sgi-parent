@@ -41,6 +41,7 @@ public class FacturaEntity {
   private String sriEstadoAutorizacion;
   private String sriMensaje;
   private String numeroAutorizacion;
+  private LocalDateTime fechaAutorizacion;
   @Lob
   private String xmlFirmado;
   @Lob
@@ -57,6 +58,11 @@ public class FacturaEntity {
   private String infoEstab;
   private String infoPtoEmi;
   private String infoSecuencial;
+  private Boolean infoObligadoContabilidad;
+  private String infoRegimenTributario;
+  private Boolean infoContribuyenteEspecial;
+  private String infoNumeroContribuyenteEspecial;
+  private Boolean infoAgenteRetencion;
 
   @OneToMany(mappedBy = "factura", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
   private List<FacturaItemEntity> items = new ArrayList<>();
@@ -211,6 +217,14 @@ public class FacturaEntity {
     this.numeroAutorizacion = numeroAutorizacion;
   }
 
+  public LocalDateTime getFechaAutorizacion() {
+    return fechaAutorizacion;
+  }
+
+  public void setFechaAutorizacion(LocalDateTime fechaAutorizacion) {
+    this.fechaAutorizacion = fechaAutorizacion;
+  }
+
   public String getXmlFirmado() {
     return xmlFirmado;
   }
@@ -313,6 +327,46 @@ public class FacturaEntity {
 
   public void setInfoSecuencial(String infoSecuencial) {
     this.infoSecuencial = infoSecuencial;
+  }
+
+  public Boolean getInfoObligadoContabilidad() {
+    return infoObligadoContabilidad;
+  }
+
+  public void setInfoObligadoContabilidad(Boolean infoObligadoContabilidad) {
+    this.infoObligadoContabilidad = infoObligadoContabilidad;
+  }
+
+  public String getInfoRegimenTributario() {
+    return infoRegimenTributario;
+  }
+
+  public void setInfoRegimenTributario(String infoRegimenTributario) {
+    this.infoRegimenTributario = infoRegimenTributario;
+  }
+
+  public Boolean getInfoContribuyenteEspecial() {
+    return infoContribuyenteEspecial;
+  }
+
+  public void setInfoContribuyenteEspecial(Boolean infoContribuyenteEspecial) {
+    this.infoContribuyenteEspecial = infoContribuyenteEspecial;
+  }
+
+  public String getInfoNumeroContribuyenteEspecial() {
+    return infoNumeroContribuyenteEspecial;
+  }
+
+  public void setInfoNumeroContribuyenteEspecial(String infoNumeroContribuyenteEspecial) {
+    this.infoNumeroContribuyenteEspecial = infoNumeroContribuyenteEspecial;
+  }
+
+  public Boolean getInfoAgenteRetencion() {
+    return infoAgenteRetencion;
+  }
+
+  public void setInfoAgenteRetencion(Boolean infoAgenteRetencion) {
+    this.infoAgenteRetencion = infoAgenteRetencion;
   }
 
   public List<FacturaItemEntity> getItems() {

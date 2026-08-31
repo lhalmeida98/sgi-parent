@@ -7,6 +7,7 @@ import ec.sgi.backend.application.dto.EmpresaUpdateRequest;
 import ec.sgi.backend.application.dto.FirmaElectronicaResult;
 import ec.sgi.backend.application.dto.UsuarioEmpresaDetalleResult;
 import ec.sgi.backend.application.exception.BusinessRuleException;
+import ec.sgi.backend.application.exception.ForbiddenException;
 import ec.sgi.backend.application.port.in.ActualizarEmpresaCommand;
 import ec.sgi.backend.application.port.in.ActualizarEmpresaUseCase;
 import ec.sgi.backend.application.port.in.CrearEmpresaCommand;
@@ -16,6 +17,7 @@ import ec.sgi.backend.application.port.in.SubirFirmaElectronicaCommand;
 import ec.sgi.backend.application.port.in.SubirFirmaElectronicaUseCase;
 import ec.sgi.backend.application.port.in.SubirLogoEmpresaCommand;
 import ec.sgi.backend.application.port.in.SubirLogoEmpresaUseCase;
+import ec.sgi.backend.domain.model.RegimenTributario;
 import ec.sgi.backend.security.CurrentUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -75,6 +77,7 @@ public class EmpresaController {
       @ApiResponse(responseCode = "403", description = "Sin permisos")
   })
   public ResponseEntity<EmpresaCreateResult> crear(@Valid @RequestBody EmpresaCreateRequest request) {
+    requireAdmin();
     EmpresaCreateResult result = crearEmpresaUseCase.crear(new CrearEmpresaCommand(
         request.ambiente(),
         request.tipoEmision(),
@@ -86,7 +89,10 @@ public class EmpresaController {
         request.ptoEmi(),
         request.secuencial(),
         Boolean.TRUE.equals(request.obligadoContabilidad()),
-        Boolean.TRUE.equals(request.regimenRimpe()),
+        parseRegimen(request.regimenTributario(), request.regimenRimpe()),
+        Boolean.TRUE.equals(request.contribuyenteEspecial()),
+        request.numeroContribuyenteEspecial(),
+        Boolean.TRUE.equals(request.agenteRetencion()),
         request.creditoDiasDefault()
     ));
     return ResponseEntity.status(HttpStatus.CREATED).body(result);
@@ -123,6 +129,7 @@ public class EmpresaController {
       @Parameter(description = "ID de la empresa") @PathVariable Long empresaId,
       @Valid @RequestBody EmpresaUpdateRequest request
   ) {
+    requireAdminOrCurrentEmpresa(empresaId);
     EmpresaResult result = actualizarEmpresaUseCase.actualizar(empresaId, new ActualizarEmpresaCommand(
         request.ambiente(),
         request.tipoEmision(),
@@ -133,7 +140,10 @@ public class EmpresaController {
         request.ptoEmi(),
         request.secuencial(),
         Boolean.TRUE.equals(request.obligadoContabilidad()),
-        Boolean.TRUE.equals(request.regimenRimpe()),
+        parseRegimen(request.regimenTributario(), request.regimenRimpe()),
+        Boolean.TRUE.equals(request.contribuyenteEspecial()),
+        request.numeroContribuyenteEspecial(),
+        Boolean.TRUE.equals(request.agenteRetencion()),
         request.creditoDiasDefault()
     ));
     return ResponseEntity.ok(result);
@@ -154,6 +164,7 @@ public class EmpresaController {
       @Parameter(description = "Archivo P12/PFX") @RequestParam("archivo") MultipartFile archivo,
       @Parameter(description = "Clave del archivo de firma") @RequestParam("clave") String clave
   ) {
+    requireAdminOrCurrentEmpresa(empresaId);
     String nombreArchivo = archivo.getOriginalFilename();
     if (nombreArchivo == null) {
       nombreArchivo = "";
@@ -188,6 +199,7 @@ public class EmpresaController {
       @Parameter(description = "ID de la empresa") @PathVariable Long empresaId,
       @Parameter(description = "Archivo de imagen") @RequestParam("archivo") MultipartFile archivo
   ) {
+    requireAdminOrCurrentEmpresa(empresaId);
     String nombreArchivo = archivo.getOriginalFilename();
     if (nombreArchivo == null) {
       nombreArchivo = "";
@@ -205,5 +217,29 @@ public class EmpresaController {
         contenido
     ));
     return ResponseEntity.status(HttpStatus.CREATED).body(result);
+  }
+
+  private void requireAdmin() {
+    if (!currentUserService.isAdmin()) {
+      throw new ForbiddenException("No tiene permisos para acceder a este recurso");
+    }
+  }
+
+  private RegimenTributario parseRegimen(String regimenTributario, Boolean regimenRimpe) {
+    try {
+      return RegimenTributario.from(regimenTributario, Boolean.TRUE.equals(regimenRimpe));
+    } catch (IllegalArgumentException ex) {
+      throw new BusinessRuleException(ex.getMessage());
+    }
+  }
+
+  private void requireAdminOrCurrentEmpresa(Long empresaId) {
+    if (currentUserService.isAdmin()) {
+      return;
+    }
+    Long currentEmpresaId = currentUserService.getEmpresaId();
+    if (empresaId == null || currentEmpresaId == null || !empresaId.equals(currentEmpresaId)) {
+      throw new ForbiddenException("No tiene permisos para acceder a este recurso");
+    }
   }
 }

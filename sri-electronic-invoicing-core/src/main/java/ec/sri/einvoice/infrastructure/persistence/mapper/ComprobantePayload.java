@@ -21,6 +21,8 @@ public record ComprobantePayload(
       String ptoEmi,
       String secuencial,
       String claveAcceso,
+      String contribuyenteRimpe,
+      String agenteRetencion,
       String firmaElectronica,
       String claveFirma
   ) {
@@ -29,6 +31,8 @@ public record ComprobantePayload(
   public record InfoFacturaPayload(
       LocalDate fechaEmision,
       String dirEstablecimiento,
+      String contribuyenteEspecial,
+      String obligadoContabilidad,
       String tipoIdentificacionComprador,
       String razonSocialComprador,
       String identificacionComprador,

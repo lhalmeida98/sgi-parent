@@ -17,6 +17,10 @@ public record SriResponse(
     return new SriResponse(SriResponseStatus.EN_PROCESO, null, null);
   }
 
+  public static SriResponse enProceso(String mensaje) {
+    return new SriResponse(SriResponseStatus.EN_PROCESO, null, mensaje);
+  }
+
   public static SriResponse autorizado(String numero) {
     return new SriResponse(SriResponseStatus.AUTORIZADO, numero, null);
   }

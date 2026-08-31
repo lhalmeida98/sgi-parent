@@ -15,7 +15,10 @@ public record Empresa(
     String secuencial,
     String logoRuta,
     boolean obligadoContabilidad,
-    boolean regimenRimpe,
+    RegimenTributario regimenTributario,
+    boolean contribuyenteEspecial,
+    String numeroContribuyenteEspecial,
+    boolean agenteRetencion,
     Integer creditoDiasDefault
 ) {
   public Empresa {
@@ -28,6 +31,9 @@ public record Empresa(
     Objects.requireNonNull(estab, "estab");
     Objects.requireNonNull(ptoEmi, "ptoEmi");
     Objects.requireNonNull(secuencial, "secuencial");
+    if (regimenTributario == null) {
+      regimenTributario = RegimenTributario.GENERAL;
+    }
   }
 
   public Empresa withSecuencial(String nuevoSecuencial) {
@@ -44,7 +50,10 @@ public record Empresa(
         nuevoSecuencial,
         logoRuta,
         obligadoContabilidad,
-        regimenRimpe,
+        regimenTributario,
+        contribuyenteEspecial,
+        numeroContribuyenteEspecial,
+        agenteRetencion,
         creditoDiasDefault
     );
   }
@@ -63,8 +72,15 @@ public record Empresa(
         secuencial,
         nuevaRuta,
         obligadoContabilidad,
-        regimenRimpe,
+        regimenTributario,
+        contribuyenteEspecial,
+        numeroContribuyenteEspecial,
+        agenteRetencion,
         creditoDiasDefault
     );
+  }
+
+  public boolean regimenRimpe() {
+    return regimenTributario != null && regimenTributario.esRimpe();
   }
 }

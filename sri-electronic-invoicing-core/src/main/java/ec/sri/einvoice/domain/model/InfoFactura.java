@@ -8,6 +8,8 @@ import java.util.Objects;
 public final class InfoFactura implements InfoDocumento {
   private final LocalDate fechaEmision;
   private final String dirEstablecimiento;
+  private final String contribuyenteEspecial;
+  private final String obligadoContabilidad;
   private final TipoIdentificacion tipoIdentificacionComprador;
   private final String razonSocialComprador;
   private final String identificacionComprador;
@@ -17,6 +19,36 @@ public final class InfoFactura implements InfoDocumento {
   private final BigDecimal importeTotal;
   private final String moneda;
   private final List<TotalImpuesto> totalConImpuestos;
+
+  public InfoFactura(
+      LocalDate fechaEmision,
+      String dirEstablecimiento,
+      String contribuyenteEspecial,
+      String obligadoContabilidad,
+      TipoIdentificacion tipoIdentificacionComprador,
+      String razonSocialComprador,
+      String identificacionComprador,
+      BigDecimal totalSinImpuestos,
+      BigDecimal totalDescuento,
+      BigDecimal propina,
+      BigDecimal importeTotal,
+      String moneda,
+      List<TotalImpuesto> totalConImpuestos
+  ) {
+    this.fechaEmision = Objects.requireNonNull(fechaEmision, "fechaEmision");
+    this.dirEstablecimiento = Objects.requireNonNull(dirEstablecimiento, "dirEstablecimiento");
+    this.contribuyenteEspecial = contribuyenteEspecial;
+    this.obligadoContabilidad = obligadoContabilidad;
+    this.tipoIdentificacionComprador = Objects.requireNonNull(tipoIdentificacionComprador, "tipoIdentificacionComprador");
+    this.razonSocialComprador = Objects.requireNonNull(razonSocialComprador, "razonSocialComprador");
+    this.identificacionComprador = Objects.requireNonNull(identificacionComprador, "identificacionComprador");
+    this.totalSinImpuestos = Objects.requireNonNull(totalSinImpuestos, "totalSinImpuestos");
+    this.totalDescuento = Objects.requireNonNull(totalDescuento, "totalDescuento");
+    this.propina = Objects.requireNonNull(propina, "propina");
+    this.importeTotal = Objects.requireNonNull(importeTotal, "importeTotal");
+    this.moneda = Objects.requireNonNull(moneda, "moneda");
+    this.totalConImpuestos = List.copyOf(totalConImpuestos);
+  }
 
   public InfoFactura(
       LocalDate fechaEmision,
@@ -31,17 +63,21 @@ public final class InfoFactura implements InfoDocumento {
       String moneda,
       List<TotalImpuesto> totalConImpuestos
   ) {
-    this.fechaEmision = Objects.requireNonNull(fechaEmision, "fechaEmision");
-    this.dirEstablecimiento = Objects.requireNonNull(dirEstablecimiento, "dirEstablecimiento");
-    this.tipoIdentificacionComprador = Objects.requireNonNull(tipoIdentificacionComprador, "tipoIdentificacionComprador");
-    this.razonSocialComprador = Objects.requireNonNull(razonSocialComprador, "razonSocialComprador");
-    this.identificacionComprador = Objects.requireNonNull(identificacionComprador, "identificacionComprador");
-    this.totalSinImpuestos = Objects.requireNonNull(totalSinImpuestos, "totalSinImpuestos");
-    this.totalDescuento = Objects.requireNonNull(totalDescuento, "totalDescuento");
-    this.propina = Objects.requireNonNull(propina, "propina");
-    this.importeTotal = Objects.requireNonNull(importeTotal, "importeTotal");
-    this.moneda = Objects.requireNonNull(moneda, "moneda");
-    this.totalConImpuestos = List.copyOf(totalConImpuestos);
+    this(
+        fechaEmision,
+        dirEstablecimiento,
+        null,
+        null,
+        tipoIdentificacionComprador,
+        razonSocialComprador,
+        identificacionComprador,
+        totalSinImpuestos,
+        totalDescuento,
+        propina,
+        importeTotal,
+        moneda,
+        totalConImpuestos
+    );
   }
 
   @Override
@@ -55,6 +91,14 @@ public final class InfoFactura implements InfoDocumento {
 
   public String dirEstablecimiento() {
     return dirEstablecimiento;
+  }
+
+  public String contribuyenteEspecial() {
+    return contribuyenteEspecial;
+  }
+
+  public String obligadoContabilidad() {
+    return obligadoContabilidad;
   }
 
   public TipoIdentificacion tipoIdentificacionComprador() {

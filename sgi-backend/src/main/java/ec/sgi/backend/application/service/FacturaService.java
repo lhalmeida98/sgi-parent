@@ -14,6 +14,7 @@ import ec.sgi.backend.application.dto.SriEnvioStatus;
 import ec.sgi.backend.application.dto.SriEstadoDto;
 import ec.sgi.backend.application.dto.SriInfoTributariaDto;
 import ec.sgi.backend.application.exception.BusinessRuleException;
+import ec.sgi.backend.application.exception.ConfiguracionTributariaIncompletaException;
 import ec.sgi.backend.application.exception.ForbiddenException;
 import ec.sgi.backend.application.exception.ResourceNotFoundException;
 import ec.sgi.backend.application.exception.SriCoreException;
@@ -55,6 +56,7 @@ import ec.sgi.backend.domain.model.FirmaElectronica;
 import ec.sgi.backend.domain.model.Inventario;
 import ec.sgi.backend.domain.model.Preorden;
 import ec.sgi.backend.domain.model.Producto;
+import ec.sgi.backend.domain.model.RegimenTributario;
 import ec.sgi.backend.domain.model.SriEstado;
 import ec.sgi.backend.domain.service.FacturaCalculoResult;
 import ec.sgi.backend.domain.service.FacturaTotalsCalculator;
@@ -71,6 +73,8 @@ import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Locale;
@@ -107,6 +111,8 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
   private static final String FORMA_PAGO_CREDITO = "CREDITO";
   private static final int DIAS_CREDITO_DEFAULT = 30;
   private static final int DIAS_CREDITO_MAX = 365;
+  private static final DateTimeFormatter SRI_FECHA_AUTORIZACION_FORMAT =
+      DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
   private static final Pattern DIAS_CREDITO_PATTERN = Pattern.compile("(\\d{1,3})");
   private static final Logger log = LoggerFactory.getLogger(FacturaService.class);
 
@@ -185,6 +191,7 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
         .orElseThrow(() -> new ResourceNotFoundException("Empresa no encontrada"));
     FirmaElectronica firma = firmaElectronicaRepository.findByEmpresaId(empresa.id())
         .orElseThrow(() -> new BusinessRuleException("Empresa sin firma electronica registrada"));
+    validarConfiguracionTributariaParaEmision(empresa, firma);
 
     Cliente cliente = clienteRepository.findByIdAndEmpresaId(command.clienteId(), empresa.id())
         .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado"));
@@ -232,7 +239,12 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
         empresa.dirMatriz(),
         empresa.estab(),
         empresa.ptoEmi(),
-        secuencial
+        secuencial,
+        empresa.obligadoContabilidad(),
+        empresa.regimenTributario(),
+        empresa.contribuyenteEspecial(),
+        empresa.numeroContribuyenteEspecial(),
+        empresa.agenteRetencion()
     );
 
     Factura factura = new Factura(
@@ -248,6 +260,7 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
         calculo.totales(),
         pagos,
         FacturaEstado.CREADA,
+        null,
         null,
         null,
         null,
@@ -279,6 +292,10 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
               empresa.estab(),
               empresa.ptoEmi(),
               secuencial,
+              empresa.obligadoContabilidad() ? "SI" : "NO",
+              empresa.contribuyenteEspecial() ? normalizeNullable(empresa.numeroContribuyenteEspecial()) : null,
+              empresa.regimenTributario().leyendaSri(),
+              empresa.agenteRetencion() ? "1" : null,
               firmaPath.toString(),
               firma.clave()
           )
@@ -337,8 +354,10 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
         .withSriEstado(new SriEstado(
             sriResult.estadoConsulta(),
             sriResult.estadoAutorizacion(),
-            sriResult.mensaje()
-        ));
+            resolveSriMensaje(factura, sriResult.mensaje())
+        ))
+        .withNumeroAutorizacion(resolveNumeroAutorizacion(factura, sriResult, nuevoEstado))
+        .withFechaAutorizacion(parseFechaAutorizacion(sriResult.fechaAutorizacion()));
     actualizada = applyXmlAutorizado(actualizada, sriResult);
     revertirInventarioSiAplica(factura, actualizada);
     facturaRepository.save(actualizada);
@@ -390,6 +409,9 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
       throw new ForbiddenException("Factura no pertenece a la empresa");
     }
     String xml = decodeXmlStored(factura.xmlAutorizado());
+    if (xml == null || xml.isBlank()) {
+      xml = decodeXmlStored(factura.xmlFirmado());
+    }
     if (xml == null || xml.isBlank()) {
       throw new ResourceNotFoundException("XML no disponible");
     }
@@ -541,6 +563,8 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
         factura.estado().name(),
         factura.claveAcceso(),
         factura.numeroAutorizacion(),
+        factura.fechaAutorizacion(),
+        toSriEstadoDto(factura.sriEstado()),
         factura.totales().totalSinImpuestos(),
         factura.totales().totalDescuento(),
         factura.totales().totalImpuestos(),
@@ -655,8 +679,10 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
           .withSriEstado(new SriEstado(
               sriResult.estadoConsulta(),
               sriResult.estadoAutorizacion(),
-              sriResult.mensaje()
-          ));
+              resolveSriMensaje(intento, sriResult.mensaje())
+          ))
+          .withNumeroAutorizacion(resolveNumeroAutorizacion(intento, sriResult, nuevoEstado))
+          .withFechaAutorizacion(parseFechaAutorizacion(sriResult.fechaAutorizacion()));
       if (actualizada.claveAcceso() == null || actualizada.claveAcceso().isBlank()) {
         actualizada = actualizada.withClaveAcceso(sriResult.claveAcceso());
       }
@@ -1244,9 +1270,6 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
       return factura;
     }
     if (!isBlank(factura.xmlAutorizado())) {
-      if (!isBlank(factura.xmlFirmado())) {
-        return factura.withXmlFirmado(null);
-      }
       return factura;
     }
     String xml = sriResult.xmlAutorizado();
@@ -1257,7 +1280,7 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
       return factura;
     }
     String stored = compressXmlAutorizado ? gzipBase64(xml) : xml;
-    return factura.withXmlAutorizado(stored).withXmlFirmado(null);
+    return factura.withXmlAutorizado(stored);
   }
 
   private Factura consultarEstadoConDelaySiAplica(Factura factura) {
@@ -1347,6 +1370,97 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
       }
     }
     return trimmed;
+  }
+
+  private void validarConfiguracionTributariaParaEmision(Empresa empresa, FirmaElectronica firma) {
+    if (!esProduccion(empresa.ambiente())) {
+      return;
+    }
+    List<String> faltantes = new ArrayList<>();
+    requireConfigured("RUC", empresa.ruc(), faltantes);
+    requireConfigured("razon social", empresa.razonSocial(), faltantes);
+    requireConfigured("direccion matriz", empresa.dirMatriz(), faltantes);
+    requireConfigured("establecimiento", empresa.estab(), faltantes);
+    requireConfigured("punto de emision", empresa.ptoEmi(), faltantes);
+    requireConfigured("ambiente SRI", empresa.ambiente(), faltantes);
+    requireConfigured("tipo de emision", empresa.tipoEmision(), faltantes);
+    if (empresa.regimenTributario() == null) {
+      faltantes.add("regimen tributario");
+    }
+    if (firma == null || isBlank(firma.rutaArchivo()) || isBlank(firma.clave())) {
+      faltantes.add("certificado de firma");
+    }
+    if (empresa.contribuyenteEspecial() && isBlank(empresa.numeroContribuyenteEspecial())) {
+      faltantes.add("numero de contribuyente especial");
+    }
+    if (!faltantes.isEmpty()) {
+      throw new ConfiguracionTributariaIncompletaException(faltantes);
+    }
+  }
+
+  private boolean esProduccion(String ambiente) {
+    String normalized = ambiente == null ? "" : ambiente.trim().toUpperCase(Locale.ROOT);
+    return "2".equals(normalized) || "PRODUCCION".equals(normalized);
+  }
+
+  private void requireConfigured(String label, String value, List<String> faltantes) {
+    if (isBlank(value)) {
+      faltantes.add(label);
+    }
+  }
+
+  private String normalizeNullable(String value) {
+    if (value == null) {
+      return null;
+    }
+    String trimmed = value.trim();
+    return trimmed.isEmpty() ? null : trimmed;
+  }
+
+  private LocalDateTime parseFechaAutorizacion(String value) {
+    String normalized = normalizeNullable(value);
+    if (normalized == null) {
+      return null;
+    }
+    try {
+      return LocalDateTime.parse(normalized, SRI_FECHA_AUTORIZACION_FORMAT);
+    } catch (DateTimeParseException ex) {
+      try {
+        return LocalDateTime.parse(normalized);
+      } catch (DateTimeParseException ignored) {
+        log.warn("No se pudo parsear fechaAutorizacion SRI: {}", normalized);
+        return null;
+      }
+    }
+  }
+
+  private String resolveNumeroAutorizacion(
+      Factura factura,
+      SriConsultaEstadoResult sriResult,
+      FacturaEstado nuevoEstado
+  ) {
+    String numero = normalizeNullable(sriResult.numeroAutorizacion());
+    if (numero != null) {
+      return numero;
+    }
+    if (factura != null && !isBlank(factura.numeroAutorizacion())) {
+      return factura.numeroAutorizacion();
+    }
+    if (nuevoEstado == FacturaEstado.AUTORIZADA) {
+      return normalizeNullable(sriResult.claveAcceso());
+    }
+    return factura == null ? null : factura.numeroAutorizacion();
+  }
+
+  private String resolveSriMensaje(Factura factura, String mensaje) {
+    String normalized = normalizeNullable(mensaje);
+    if (normalized != null) {
+      return normalized;
+    }
+    if (factura == null || factura.sriEstado() == null) {
+      return null;
+    }
+    return factura.sriEstado().mensaje();
   }
 
   private String nextSecuencial(String secuencial) {

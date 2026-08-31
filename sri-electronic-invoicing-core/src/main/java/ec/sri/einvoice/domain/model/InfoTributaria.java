@@ -13,8 +13,42 @@ public final class InfoTributaria {
   private final String ptoEmi;
   private final String secuencial;
   private final ClaveAcceso claveAcceso;
+  private final String contribuyenteRimpe;
+  private final String agenteRetencion;
   private final String firmaElectronica;
   private final String claveFirma;
+
+  public InfoTributaria(
+      Ambiente ambiente,
+      TipoEmision tipoEmision,
+      String razonSocial,
+      String nombreComercial,
+      String ruc,
+      String dirMatriz,
+      String estab,
+      String ptoEmi,
+      String secuencial,
+      ClaveAcceso claveAcceso,
+      String contribuyenteRimpe,
+      String agenteRetencion,
+      String firmaElectronica,
+      String claveFirma
+  ) {
+    this.ambiente = Objects.requireNonNull(ambiente, "ambiente");
+    this.tipoEmision = Objects.requireNonNull(tipoEmision, "tipoEmision");
+    this.razonSocial = Objects.requireNonNull(razonSocial, "razonSocial");
+    this.nombreComercial = Objects.requireNonNull(nombreComercial, "nombreComercial");
+    this.ruc = Objects.requireNonNull(ruc, "ruc");
+    this.dirMatriz = Objects.requireNonNull(dirMatriz, "dirMatriz");
+    this.estab = Objects.requireNonNull(estab, "estab");
+    this.ptoEmi = Objects.requireNonNull(ptoEmi, "ptoEmi");
+    this.secuencial = Objects.requireNonNull(secuencial, "secuencial");
+    this.claveAcceso = claveAcceso;
+    this.contribuyenteRimpe = contribuyenteRimpe;
+    this.agenteRetencion = agenteRetencion;
+    this.firmaElectronica = firmaElectronica;
+    this.claveFirma = claveFirma;
+  }
 
   public InfoTributaria(
       Ambiente ambiente,
@@ -30,18 +64,22 @@ public final class InfoTributaria {
       String firmaElectronica,
       String claveFirma
   ) {
-    this.ambiente = Objects.requireNonNull(ambiente, "ambiente");
-    this.tipoEmision = Objects.requireNonNull(tipoEmision, "tipoEmision");
-    this.razonSocial = Objects.requireNonNull(razonSocial, "razonSocial");
-    this.nombreComercial = Objects.requireNonNull(nombreComercial, "nombreComercial");
-    this.ruc = Objects.requireNonNull(ruc, "ruc");
-    this.dirMatriz = Objects.requireNonNull(dirMatriz, "dirMatriz");
-    this.estab = Objects.requireNonNull(estab, "estab");
-    this.ptoEmi = Objects.requireNonNull(ptoEmi, "ptoEmi");
-    this.secuencial = Objects.requireNonNull(secuencial, "secuencial");
-    this.claveAcceso = claveAcceso;
-    this.firmaElectronica = firmaElectronica;
-    this.claveFirma = claveFirma;
+    this(
+        ambiente,
+        tipoEmision,
+        razonSocial,
+        nombreComercial,
+        ruc,
+        dirMatriz,
+        estab,
+        ptoEmi,
+        secuencial,
+        claveAcceso,
+        null,
+        null,
+        firmaElectronica,
+        claveFirma
+    );
   }
 
   public Ambiente ambiente() {
@@ -84,6 +122,14 @@ public final class InfoTributaria {
     return claveAcceso;
   }
 
+  public String contribuyenteRimpe() {
+    return contribuyenteRimpe;
+  }
+
+  public String agenteRetencion() {
+    return agenteRetencion;
+  }
+
   public String firmaElectronica() {
     return firmaElectronica;
   }
@@ -104,6 +150,8 @@ public final class InfoTributaria {
         ptoEmi,
         secuencial,
         nuevaClave,
+        contribuyenteRimpe,
+        agenteRetencion,
         firmaElectronica,
         claveFirma
     );

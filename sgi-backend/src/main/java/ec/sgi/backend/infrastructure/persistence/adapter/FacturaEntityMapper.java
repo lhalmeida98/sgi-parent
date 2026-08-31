@@ -7,6 +7,7 @@ import ec.sgi.backend.domain.model.FacturaItem;
 import ec.sgi.backend.domain.model.FacturaPago;
 import ec.sgi.backend.domain.model.FacturaTotales;
 import ec.sgi.backend.domain.model.InfoTributariaData;
+import ec.sgi.backend.domain.model.RegimenTributario;
 import ec.sgi.backend.domain.model.SriEstado;
 import ec.sgi.backend.infrastructure.persistence.entity.FacturaEntity;
 import ec.sgi.backend.infrastructure.persistence.entity.FacturaImpuestoEntity;
@@ -33,6 +34,7 @@ public class FacturaEntityMapper {
     entity.setClaveAcceso(factura.claveAcceso());
     entity.setCoreComprobanteId(factura.coreComprobanteId());
     entity.setNumeroAutorizacion(factura.numeroAutorizacion());
+    entity.setFechaAutorizacion(factura.fechaAutorizacion());
     entity.setXmlFirmado(factura.xmlFirmado());
     entity.setXmlAutorizado(factura.xmlAutorizado());
     entity.setIntentosConsulta(factura.intentosConsulta());
@@ -55,6 +57,11 @@ public class FacturaEntityMapper {
     entity.setInfoEstab(info.estab());
     entity.setInfoPtoEmi(info.ptoEmi());
     entity.setInfoSecuencial(info.secuencial());
+    entity.setInfoObligadoContabilidad(info.obligadoContabilidad());
+    entity.setInfoRegimenTributario(info.regimenTributario().name());
+    entity.setInfoContribuyenteEspecial(info.contribuyenteEspecial());
+    entity.setInfoNumeroContribuyenteEspecial(info.numeroContribuyenteEspecial());
+    entity.setInfoAgenteRetencion(info.agenteRetencion());
 
     List<FacturaItemEntity> itemEntities = new ArrayList<>();
     for (FacturaItem item : factura.items()) {
@@ -108,7 +115,12 @@ public class FacturaEntityMapper {
         entity.getInfoDirMatriz(),
         entity.getInfoEstab(),
         entity.getInfoPtoEmi(),
-        entity.getInfoSecuencial()
+        entity.getInfoSecuencial(),
+        Boolean.TRUE.equals(entity.getInfoObligadoContabilidad()),
+        RegimenTributario.from(entity.getInfoRegimenTributario(), false),
+        Boolean.TRUE.equals(entity.getInfoContribuyenteEspecial()),
+        entity.getInfoNumeroContribuyenteEspecial(),
+        Boolean.TRUE.equals(entity.getInfoAgenteRetencion())
     );
 
     FacturaTotales totales = new FacturaTotales(
@@ -177,6 +189,7 @@ public class FacturaEntityMapper {
         entity.getCoreComprobanteId(),
         sriEstado,
         entity.getNumeroAutorizacion(),
+        entity.getFechaAutorizacion(),
         entity.getXmlFirmado(),
         entity.getXmlAutorizado(),
         intentosConsulta,

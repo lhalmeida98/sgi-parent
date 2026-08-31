@@ -39,6 +39,8 @@ public final class SriEmitirFacturaRequestBuilder {
     SriInfoFacturaDto infoFactura = new SriInfoFacturaDto(
         command.fechaEmision(),
         factura.dirEstablecimiento(),
+        infoTributaria.contribuyenteEspecial(),
+        infoTributaria.obligadoContabilidad(),
         cliente.tipoIdentificacion(),
         cliente.razonSocial(),
         cliente.identificacion(),

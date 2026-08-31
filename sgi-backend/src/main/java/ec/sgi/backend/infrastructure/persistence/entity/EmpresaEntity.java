@@ -25,6 +25,10 @@ public class EmpresaEntity {
   private String logoRuta;
   private boolean obligadoContabilidad;
   private boolean regimenRimpe;
+  private String regimenTributario;
+  private boolean contribuyenteEspecial;
+  private String numeroContribuyenteEspecial;
+  private boolean agenteRetencion;
   private Integer creditoDiasDefault;
 
   public EmpresaEntity() {
@@ -132,6 +136,38 @@ public class EmpresaEntity {
 
   public void setRegimenRimpe(boolean regimenRimpe) {
     this.regimenRimpe = regimenRimpe;
+  }
+
+  public String getRegimenTributario() {
+    return regimenTributario;
+  }
+
+  public void setRegimenTributario(String regimenTributario) {
+    this.regimenTributario = regimenTributario;
+  }
+
+  public boolean isContribuyenteEspecial() {
+    return contribuyenteEspecial;
+  }
+
+  public void setContribuyenteEspecial(boolean contribuyenteEspecial) {
+    this.contribuyenteEspecial = contribuyenteEspecial;
+  }
+
+  public String getNumeroContribuyenteEspecial() {
+    return numeroContribuyenteEspecial;
+  }
+
+  public void setNumeroContribuyenteEspecial(String numeroContribuyenteEspecial) {
+    this.numeroContribuyenteEspecial = numeroContribuyenteEspecial;
+  }
+
+  public boolean isAgenteRetencion() {
+    return agenteRetencion;
+  }
+
+  public void setAgenteRetencion(boolean agenteRetencion) {
+    this.agenteRetencion = agenteRetencion;
   }
 
   public Integer getCreditoDiasDefault() {

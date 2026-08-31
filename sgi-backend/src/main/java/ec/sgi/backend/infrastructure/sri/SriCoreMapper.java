@@ -39,6 +39,8 @@ public final class SriCoreMapper {
         infoTributaria.ptoEmi(),
         infoTributaria.secuencial(),
         null,
+        infoTributaria.contribuyenteRimpe(),
+        infoTributaria.agenteRetencion(),
         infoTributaria.firmaElectronica(),
         infoTributaria.claveFirma()
     );
@@ -47,6 +49,8 @@ public final class SriCoreMapper {
     InfoFactura infoFactura = new InfoFactura(
         infoFacturaDto.fechaEmision(),
         infoFacturaDto.dirEstablecimiento(),
+        infoFacturaDto.contribuyenteEspecial(),
+        infoFacturaDto.obligadoContabilidad(),
         parseTipoIdentificacion(infoFacturaDto.tipoIdentificacionComprador()),
         infoFacturaDto.razonSocialComprador(),
         infoFacturaDto.identificacionComprador(),

@@ -22,6 +22,7 @@ public final class Factura {
   private final String coreComprobanteId;
   private final SriEstado sriEstado;
   private final String numeroAutorizacion;
+  private final LocalDateTime fechaAutorizacion;
   private final String xmlFirmado;
   private final String xmlAutorizado;
   private final int intentosConsulta;
@@ -44,6 +45,7 @@ public final class Factura {
       String coreComprobanteId,
       SriEstado sriEstado,
       String numeroAutorizacion,
+      LocalDateTime fechaAutorizacion,
       String xmlFirmado,
       String xmlAutorizado,
       int intentosConsulta,
@@ -65,6 +67,7 @@ public final class Factura {
     this.coreComprobanteId = coreComprobanteId;
     this.sriEstado = sriEstado;
     this.numeroAutorizacion = numeroAutorizacion;
+    this.fechaAutorizacion = fechaAutorizacion;
     this.xmlFirmado = xmlFirmado;
     this.xmlAutorizado = xmlAutorizado;
     this.intentosConsulta = intentosConsulta;
@@ -135,6 +138,10 @@ public final class Factura {
     return numeroAutorizacion;
   }
 
+  public LocalDateTime fechaAutorizacion() {
+    return fechaAutorizacion;
+  }
+
   public String xmlFirmado() {
     return xmlFirmado;
   }
@@ -169,6 +176,7 @@ public final class Factura {
         coreComprobanteId,
         sriEstado,
         numeroAutorizacion,
+        fechaAutorizacion,
         xmlFirmado,
         xmlAutorizado,
         intentosConsulta,
@@ -194,6 +202,7 @@ public final class Factura {
         coreComprobanteId,
         sriEstado,
         numeroAutorizacion,
+        fechaAutorizacion,
         xmlFirmado,
         xmlAutorizado,
         intentosConsulta,
@@ -219,6 +228,7 @@ public final class Factura {
         nuevoId,
         sriEstado,
         numeroAutorizacion,
+        fechaAutorizacion,
         xmlFirmado,
         xmlAutorizado,
         intentosConsulta,
@@ -244,6 +254,7 @@ public final class Factura {
         coreComprobanteId,
         nuevoEstado,
         numeroAutorizacion,
+        fechaAutorizacion,
         xmlFirmado,
         xmlAutorizado,
         intentosConsulta,
@@ -269,6 +280,33 @@ public final class Factura {
         coreComprobanteId,
         sriEstado,
         nuevoNumero,
+        fechaAutorizacion,
+        xmlFirmado,
+        xmlAutorizado,
+        intentosConsulta,
+        ultimoIntentoConsulta
+    );
+  }
+
+  public Factura withFechaAutorizacion(LocalDateTime nuevaFecha) {
+    return new Factura(
+        id,
+        empresaId,
+        clienteId,
+        preordenId,
+        infoTributaria,
+        fechaEmision,
+        dirEstablecimiento,
+        moneda,
+        items,
+        totales,
+        pagos,
+        estado,
+        claveAcceso,
+        coreComprobanteId,
+        sriEstado,
+        numeroAutorizacion,
+        nuevaFecha,
         xmlFirmado,
         xmlAutorizado,
         intentosConsulta,
@@ -294,6 +332,7 @@ public final class Factura {
         coreComprobanteId,
         sriEstado,
         numeroAutorizacion,
+        fechaAutorizacion,
         nuevoXml,
         xmlAutorizado,
         intentosConsulta,
@@ -319,6 +358,7 @@ public final class Factura {
         coreComprobanteId,
         sriEstado,
         numeroAutorizacion,
+        fechaAutorizacion,
         xmlFirmado,
         nuevoXml,
         intentosConsulta,
@@ -344,6 +384,7 @@ public final class Factura {
         coreComprobanteId,
         sriEstado,
         numeroAutorizacion,
+        fechaAutorizacion,
         xmlFirmado,
         xmlAutorizado,
         nuevosIntentos,

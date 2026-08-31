@@ -10,6 +10,10 @@ public record SriInfoTributariaDto(
     String estab,
     String ptoEmi,
     String secuencial,
+    String obligadoContabilidad,
+    String contribuyenteEspecial,
+    String contribuyenteRimpe,
+    String agenteRetencion,
     String firmaElectronica,
     String claveFirma
 ) {

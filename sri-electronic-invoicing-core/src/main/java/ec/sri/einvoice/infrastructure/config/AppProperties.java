@@ -86,7 +86,7 @@ public class AppProperties {
   public static class Sri {
     private String client = "soap";
     private long timeoutSeconds = 30;
-    private String xmlVersion = "1.0.0";
+    private String xmlVersion = "2.1.0";
     private int autorizacionMaxIntentos = 6;
     private long autorizacionBackoffSeconds = 5;
     private long autorizacionBackoffMaxSeconds = 30;

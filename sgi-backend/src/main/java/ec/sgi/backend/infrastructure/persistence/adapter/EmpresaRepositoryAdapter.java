@@ -2,6 +2,7 @@ package ec.sgi.backend.infrastructure.persistence.adapter;
 
 import ec.sgi.backend.application.port.out.EmpresaRepository;
 import ec.sgi.backend.domain.model.Empresa;
+import ec.sgi.backend.domain.model.RegimenTributario;
 import ec.sgi.backend.infrastructure.persistence.entity.EmpresaEntity;
 import ec.sgi.backend.infrastructure.persistence.repository.EmpresaJpaRepository;
 import java.util.List;
@@ -60,7 +61,10 @@ public class EmpresaRepositoryAdapter implements EmpresaRepository {
         entity.getSecuencial(),
         entity.getLogoRuta(),
         entity.isObligadoContabilidad(),
-        entity.isRegimenRimpe(),
+        RegimenTributario.from(entity.getRegimenTributario(), entity.isRegimenRimpe()),
+        entity.isContribuyenteEspecial(),
+        entity.getNumeroContribuyenteEspecial(),
+        entity.isAgenteRetencion(),
         entity.getCreditoDiasDefault()
     );
   }
@@ -80,6 +84,10 @@ public class EmpresaRepositoryAdapter implements EmpresaRepository {
     entity.setLogoRuta(empresa.logoRuta());
     entity.setObligadoContabilidad(empresa.obligadoContabilidad());
     entity.setRegimenRimpe(empresa.regimenRimpe());
+    entity.setRegimenTributario(empresa.regimenTributario().name());
+    entity.setContribuyenteEspecial(empresa.contribuyenteEspecial());
+    entity.setNumeroContribuyenteEspecial(empresa.numeroContribuyenteEspecial());
+    entity.setAgenteRetencion(empresa.agenteRetencion());
     entity.setCreditoDiasDefault(empresa.creditoDiasDefault());
     return entity;
   }

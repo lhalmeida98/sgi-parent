@@ -81,13 +81,13 @@ public class FacturaPdfService implements GenerarFacturaPdfUseCase {
     }
   }
 
-  private String buildHtml(Factura factura, Empresa empresa, Cliente cliente) {
+  String buildHtml(Factura factura, Empresa empresa, Cliente cliente) {
     InfoTributariaData info = factura.infoTributaria();
     String numeroFactura = safe(info.estab()) + "-" + safe(info.ptoEmi()) + "-" + safe(info.secuencial());
     String ambiente = mapAmbiente(info.ambiente());
     String emision = mapTipoEmision(info.tipoEmision());
     String fechaEmision = formatFecha(factura.fechaEmision());
-    String fechaHoraEmision = formatFechaHora(factura.fechaEmision(), factura.ultimoIntentoConsulta());
+    String fechaAutorizacion = formatFechaHora(factura.fechaAutorizacion());
     String claveAcceso = safe(factura.claveAcceso());
     String numeroAutorizacion = safe(factura.numeroAutorizacion());
 
@@ -147,30 +147,33 @@ public class FacturaPdfService implements GenerarFacturaPdfUseCase {
             : "        <img src='" + logoData + "' style='max-height:90px; max-width:280px;' />\n")
         .append("        <div class='empresa-box'>\n")
         .append("          <div style='font-weight:bold; text-align:center;'>")
-        .append(escapeHtml(empresa.razonSocial())).append("</div>\n")
+        .append(escapeHtml(info.razonSocial())).append("</div>\n")
         .append("          <div style='text-align:center;'>")
-        .append(escapeHtml(empresa.nombreComercial())).append("</div>\n")
+        .append(escapeHtml(info.nombreComercial())).append("</div>\n")
         .append("          <div style='margin-top:6px;'><strong>Direccion matriz:</strong> ")
-        .append(escapeHtml(empresa.dirMatriz())).append("</div>\n")
+        .append(escapeHtml(info.dirMatriz())).append("</div>\n")
         .append("          <div><strong>OBLIGADO A LLEVAR CONTABILIDAD:</strong> ")
-        .append(empresa.obligadoContabilidad() ? "SI" : "NO").append("</div>\n");
-    if (empresa.regimenRimpe()) {
-      html.append("          <div><strong>CONTRIBUYENTE REGIMEN RIMPE</strong></div>\n");
+        .append(info.obligadoContabilidad() ? "SI" : "NO").append("</div>\n");
+    String leyendaRimpe = info.regimenTributario().leyendaSri();
+    if (leyendaRimpe != null) {
+      html.append("          <div><strong>").append(escapeHtml(leyendaRimpe)).append("</strong></div>\n");
     }
     html.append("          <div><strong>RUC:</strong> ")
-        .append(escapeHtml(empresa.ruc())).append("</div>\n")
+        .append(escapeHtml(info.ruc())).append("</div>\n")
         .append("        </div>\n")
         .append("      </td>\n")
         .append("      <td class='factura-box'>\n")
         .append("        <div><strong>R.U.C.:</strong> ")
-        .append(escapeHtml(empresa.ruc())).append("</div>\n")
+        .append(escapeHtml(info.ruc())).append("</div>\n")
         .append("        <h1>FACTURA</h1>\n")
         .append("        <div><strong>No.</strong> <span style='color:#c00; font-weight:bold;'>")
         .append(escapeHtml(numeroFactura)).append("</span></div>\n")
         .append("        <div style='margin-top:6px; font-weight:bold;'>NUMERO DE AUTORIZACION</div>\n")
         .append("        <div>").append(escapeHtml(numeroAutorizacion)).append("</div>\n")
-        .append("        <div style='margin-top:6px;'><strong>FECHA Y HORA DE EMISION:</strong> ")
-        .append(escapeHtml(fechaHoraEmision)).append("</div>\n")
+        .append("        <div style='margin-top:6px;'><strong>FECHA Y HORA DE AUTORIZACION:</strong> ")
+        .append(escapeHtml(fechaAutorizacion)).append("</div>\n")
+        .append("        <div><strong>FECHA DE EMISION:</strong> ")
+        .append(escapeHtml(fechaEmision)).append("</div>\n")
         .append("        <div><strong>AMBIENTE:</strong> ").append(escapeHtml(ambiente)).append("</div>\n")
         .append("        <div><strong>EMISION:</strong> ").append(escapeHtml(emision)).append("</div>\n")
         .append("        <div style='margin-top:6px; font-weight:bold; text-align:center;'>CLAVE DE ACCESO</div>\n");
@@ -266,12 +269,9 @@ public class FacturaPdfService implements GenerarFacturaPdfUseCase {
     return FECHA_FORMAT.format(fecha);
   }
 
-  private String formatFechaHora(LocalDate fecha, LocalDateTime fechaHora) {
+  private String formatFechaHora(LocalDateTime fechaHora) {
     if (fechaHora != null) {
       return FECHA_HORA_FORMAT.format(fechaHora);
-    }
-    if (fecha != null) {
-      return FECHA_HORA_FORMAT.format(fecha.atStartOfDay());
     }
     return "";
   }

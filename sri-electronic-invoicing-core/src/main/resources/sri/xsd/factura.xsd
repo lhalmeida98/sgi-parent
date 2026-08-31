@@ -66,6 +66,12 @@
     </xs:restriction>
   </xs:simpleType>
 
+  <xs:simpleType name="digits1to8">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\d{1,8}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
   <xs:simpleType name="text15">
     <xs:restriction base="xs:string">
       <xs:maxLength value="15"/>
@@ -78,6 +84,12 @@
     </xs:restriction>
   </xs:simpleType>
 
+  <xs:simpleType name="text13">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="13"/>
+    </xs:restriction>
+  </xs:simpleType>
+
   <xs:simpleType name="text25">
     <xs:restriction base="xs:string">
       <xs:maxLength value="25"/>
@@ -87,6 +99,20 @@
   <xs:simpleType name="text300">
     <xs:restriction base="xs:string">
       <xs:maxLength value="300"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="obligadoContabilidadType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="SI"/>
+      <xs:enumeration value="NO"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="contribuyenteRimpeType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="CONTRIBUYENTE RÉGIMEN RIMPE"/>
+      <xs:enumeration value="CONTRIBUYENTE NEGOCIO POPULAR - RÉGIMEN RIMPE"/>
     </xs:restriction>
   </xs:simpleType>
 
@@ -116,6 +142,8 @@
       <xs:element name="ptoEmi" type="digits3"/>
       <xs:element name="secuencial" type="digits9"/>
       <xs:element name="dirMatriz" type="text300"/>
+      <xs:element name="agenteRetencion" type="digits1to8" minOccurs="0"/>
+      <xs:element name="contribuyenteRimpe" type="contribuyenteRimpeType" minOccurs="0"/>
     </xs:sequence>
   </xs:complexType>
 
@@ -138,6 +166,8 @@
     <xs:sequence>
       <xs:element name="fechaEmision" type="dateDDMMYYYY"/>
       <xs:element name="dirEstablecimiento" type="text300"/>
+      <xs:element name="contribuyenteEspecial" type="text13" minOccurs="0"/>
+      <xs:element name="obligadoContabilidad" type="obligadoContabilidadType" minOccurs="0"/>
       <xs:element name="tipoIdentificacionComprador" type="tipoIdentificacionType"/>
       <xs:element name="razonSocialComprador" type="text300"/>
       <xs:element name="identificacionComprador" type="text20"/>
@@ -184,12 +214,27 @@
     </xs:sequence>
   </xs:complexType>
 
+  <xs:complexType name="infoAdicionalType">
+    <xs:sequence>
+      <xs:element name="campoAdicional" minOccurs="1" maxOccurs="15">
+        <xs:complexType>
+          <xs:simpleContent>
+            <xs:extension base="text300">
+              <xs:attribute name="nombre" type="text300" use="required"/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
   <xs:element name="factura">
     <xs:complexType>
       <xs:sequence>
         <xs:element name="infoTributaria" type="infoTributariaType"/>
         <xs:element name="infoFactura" type="infoFacturaType"/>
         <xs:element name="detalles" type="detallesType"/>
+        <xs:element name="infoAdicional" type="infoAdicionalType" minOccurs="0"/>
       </xs:sequence>
       <xs:attribute name="id" use="required" fixed="comprobante"/>
       <xs:attribute name="version" use="required">
@@ -197,6 +242,8 @@
           <xs:restriction base="xs:string">
             <xs:enumeration value="1.0.0"/>
             <xs:enumeration value="1.1.0"/>
+            <xs:enumeration value="2.0.0"/>
+            <xs:enumeration value="2.1.0"/>
           </xs:restriction>
         </xs:simpleType>
       </xs:attribute>

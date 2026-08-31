@@ -18,6 +18,7 @@ import ec.sgi.backend.application.port.out.EmpresaRepository;
 import ec.sgi.backend.application.port.out.FirmaElectronicaRepository;
 import ec.sgi.backend.domain.model.Empresa;
 import ec.sgi.backend.domain.model.FirmaElectronica;
+import ec.sgi.backend.domain.model.RegimenTributario;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -59,6 +60,8 @@ public class EmpresaService implements CrearEmpresaUseCase, ListarEmpresasUseCas
   @Override
   public EmpresaCreateResult crear(CrearEmpresaCommand command) {
     validarSecuencial(command.secuencial());
+    validarConfiguracionTributaria(command.regimenTributario(), command.contribuyenteEspecial(),
+        command.numeroContribuyenteEspecial());
     Integer creditoDiasDefault = sanitizeCreditoDias(command.creditoDiasDefault());
     Empresa empresa = new Empresa(
         null,
@@ -73,7 +76,10 @@ public class EmpresaService implements CrearEmpresaUseCase, ListarEmpresasUseCas
         command.secuencial().trim(),
         null,
         command.obligadoContabilidad(),
-        command.regimenRimpe(),
+        command.regimenTributario(),
+        command.contribuyenteEspecial(),
+        normalizeNullable(command.numeroContribuyenteEspecial()),
+        command.agenteRetencion(),
         creditoDiasDefault
     );
     Empresa guardada = empresaRepository.save(empresa);
@@ -92,6 +98,8 @@ public class EmpresaService implements CrearEmpresaUseCase, ListarEmpresasUseCas
     Empresa existente = empresaRepository.findById(empresaId)
         .orElseThrow(() -> new ResourceNotFoundException("Empresa no encontrada"));
     validarSecuencial(command.secuencial());
+    validarConfiguracionTributaria(command.regimenTributario(), command.contribuyenteEspecial(),
+        command.numeroContribuyenteEspecial());
     Integer creditoDiasDefault = command.creditoDiasDefault() == null
         ? existente.creditoDiasDefault()
         : sanitizeCreditoDias(command.creditoDiasDefault());
@@ -109,7 +117,10 @@ public class EmpresaService implements CrearEmpresaUseCase, ListarEmpresasUseCas
         command.secuencial().trim(),
         existente.logoRuta(),
         command.obligadoContabilidad(),
-        command.regimenRimpe(),
+        command.regimenTributario(),
+        command.contribuyenteEspecial(),
+        normalizeNullable(command.numeroContribuyenteEspecial()),
+        command.agenteRetencion(),
         creditoDiasDefault
     );
     Empresa guardada = empresaRepository.save(actualizada);
@@ -168,9 +179,34 @@ public class EmpresaService implements CrearEmpresaUseCase, ListarEmpresasUseCas
         empresa.secuencial(),
         empresa.logoRuta(),
         empresa.obligadoContabilidad(),
+        empresa.regimenTributario().name(),
         empresa.regimenRimpe(),
+        empresa.contribuyenteEspecial(),
+        empresa.numeroContribuyenteEspecial(),
+        empresa.agenteRetencion(),
         empresa.creditoDiasDefault()
     );
+  }
+
+  private void validarConfiguracionTributaria(
+      RegimenTributario regimenTributario,
+      boolean contribuyenteEspecial,
+      String numeroContribuyenteEspecial
+  ) {
+    if (regimenTributario == null) {
+      throw new BusinessRuleException("Regimen tributario requerido");
+    }
+    if (contribuyenteEspecial && normalizeNullable(numeroContribuyenteEspecial) == null) {
+      throw new BusinessRuleException("Numero de contribuyente especial requerido");
+    }
+  }
+
+  private String normalizeNullable(String value) {
+    if (value == null) {
+      return null;
+    }
+    String trimmed = value.trim();
+    return trimmed.isEmpty() ? null : trimmed;
   }
 
   private Integer sanitizeCreditoDias(Integer dias) {

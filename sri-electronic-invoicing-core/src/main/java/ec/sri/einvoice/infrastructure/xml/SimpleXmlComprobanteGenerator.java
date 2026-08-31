@@ -48,11 +48,15 @@ public class SimpleXmlComprobanteGenerator implements XmlComprobanteGenerator {
     xml.append(tag("ptoEmi", infoTributaria.ptoEmi()));
     xml.append(tag("secuencial", infoTributaria.secuencial()));
     xml.append(tag("dirMatriz", escape(infoTributaria.dirMatriz())));
+    xml.append(optionalTag("agenteRetencion", infoTributaria.agenteRetencion()));
+    xml.append(optionalEscapedTag("contribuyenteRimpe", infoTributaria.contribuyenteRimpe()));
     xml.append("</infoTributaria>");
 
     xml.append("<infoFactura>");
     xml.append(tag("fechaEmision", infoFactura.fechaEmision().format(FECHA_FORMATO)));
     xml.append(tag("dirEstablecimiento", escape(infoFactura.dirEstablecimiento())));
+    xml.append(optionalTag("contribuyenteEspecial", infoFactura.contribuyenteEspecial()));
+    xml.append(optionalTag("obligadoContabilidad", infoFactura.obligadoContabilidad()));
     xml.append(tag("tipoIdentificacionComprador", infoFactura.tipoIdentificacionComprador().codigo()));
     xml.append(tag("razonSocialComprador", escape(infoFactura.razonSocialComprador())));
     xml.append(tag("identificacionComprador", infoFactura.identificacionComprador()));
@@ -102,6 +106,20 @@ public class SimpleXmlComprobanteGenerator implements XmlComprobanteGenerator {
 
   private String tag(String name, String value) {
     return "<" + name + ">" + value + "</" + name + ">";
+  }
+
+  private String optionalTag(String name, String value) {
+    if (value == null || value.isBlank()) {
+      return "";
+    }
+    return tag(name, value);
+  }
+
+  private String optionalEscapedTag(String name, String value) {
+    if (value == null || value.isBlank()) {
+      return "";
+    }
+    return tag(name, escape(value));
   }
 
   private String escape(String value) {

@@ -1,5 +1,6 @@
 package ec.sgi.backend.application.port.in;
 
+import ec.sgi.backend.domain.model.RegimenTributario;
 import java.util.Objects;
 
 public record ActualizarEmpresaCommand(
@@ -12,7 +13,10 @@ public record ActualizarEmpresaCommand(
     String ptoEmi,
     String secuencial,
     boolean obligadoContabilidad,
-    boolean regimenRimpe,
+    RegimenTributario regimenTributario,
+    boolean contribuyenteEspecial,
+    String numeroContribuyenteEspecial,
+    boolean agenteRetencion,
     Integer creditoDiasDefault
 ) {
   public ActualizarEmpresaCommand {

@@ -84,6 +84,8 @@ public class SriCoreAdapter implements SriCorePort {
           response.estadoAutorizacion(),
           response.mensaje(),
           response.claveAcceso(),
+          response.numeroAutorizacion(),
+          response.fechaAutorizacion(),
           response.comprobanteXml()
       );
     } catch (BusinessRuleException ex) {

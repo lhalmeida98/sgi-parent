@@ -115,6 +115,8 @@ public class ComprobanteMapper {
         infoTributaria.ptoEmi(),
         infoTributaria.secuencial(),
         infoTributaria.claveAcceso() != null ? infoTributaria.claveAcceso().value() : null,
+        infoTributaria.contribuyenteRimpe(),
+        infoTributaria.agenteRetencion(),
         infoTributaria.firmaElectronica(),
         infoTributaria.claveFirma()
     );
@@ -124,6 +126,8 @@ public class ComprobanteMapper {
     return new ComprobantePayload.InfoFacturaPayload(
         infoFactura.fechaEmision(),
         infoFactura.dirEstablecimiento(),
+        infoFactura.contribuyenteEspecial(),
+        infoFactura.obligadoContabilidad(),
         infoFactura.tipoIdentificacionComprador().name(),
         infoFactura.razonSocialComprador(),
         infoFactura.identificacionComprador(),
@@ -179,6 +183,8 @@ public class ComprobanteMapper {
         payload.ptoEmi(),
         payload.secuencial(),
         payload.claveAcceso() != null ? ClaveAcceso.of(payload.claveAcceso()) : null,
+        payload.contribuyenteRimpe(),
+        payload.agenteRetencion(),
         payload.firmaElectronica(),
         payload.claveFirma()
     );
@@ -188,6 +194,8 @@ public class ComprobanteMapper {
     return new InfoFactura(
         payload.fechaEmision(),
         payload.dirEstablecimiento(),
+        payload.contribuyenteEspecial(),
+        payload.obligadoContabilidad(),
         TipoIdentificacion.valueOf(payload.tipoIdentificacionComprador()),
         payload.razonSocialComprador(),
         payload.identificacionComprador(),

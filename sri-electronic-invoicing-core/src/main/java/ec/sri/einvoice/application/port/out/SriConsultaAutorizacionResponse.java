@@ -5,6 +5,7 @@ public record SriConsultaAutorizacionResponse(
     String estadoConsulta,
     String estadoAutorizacion,
     String claveAcceso,
+    String numeroAutorizacion,
     String rucEmisor,
     String tipoComprobante,
     String fechaAutorizacion,
@@ -14,6 +15,7 @@ public record SriConsultaAutorizacionResponse(
   public static SriConsultaAutorizacionResponse error(String mensaje) {
     return new SriConsultaAutorizacionResponse(
         SriConsultaAutorizacionStatus.ERROR,
+        null,
         null,
         null,
         null,
