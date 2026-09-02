@@ -14,6 +14,7 @@ public final class Factura {
   private final LocalDate fechaEmision;
   private final String dirEstablecimiento;
   private final String moneda;
+  private final String observaciones;
   private final List<FacturaItem> items;
   private final FacturaTotales totales;
   private final List<FacturaPago> pagos;
@@ -37,6 +38,7 @@ public final class Factura {
       LocalDate fechaEmision,
       String dirEstablecimiento,
       String moneda,
+      String observaciones,
       List<FacturaItem> items,
       FacturaTotales totales,
       List<FacturaPago> pagos,
@@ -59,6 +61,7 @@ public final class Factura {
     this.fechaEmision = Objects.requireNonNull(fechaEmision, "fechaEmision");
     this.dirEstablecimiento = Objects.requireNonNull(dirEstablecimiento, "dirEstablecimiento");
     this.moneda = Objects.requireNonNull(moneda, "moneda");
+    this.observaciones = observaciones;
     this.items = List.copyOf(items);
     this.totales = Objects.requireNonNull(totales, "totales");
     this.pagos = List.copyOf(pagos);
@@ -104,6 +107,10 @@ public final class Factura {
 
   public String moneda() {
     return moneda;
+  }
+
+  public String observaciones() {
+    return observaciones;
   }
 
   public List<FacturaItem> items() {
@@ -168,6 +175,7 @@ public final class Factura {
         fechaEmision,
         dirEstablecimiento,
         moneda,
+        observaciones,
         items,
         totales,
         pagos,
@@ -194,6 +202,7 @@ public final class Factura {
         fechaEmision,
         dirEstablecimiento,
         moneda,
+        observaciones,
         items,
         totales,
         pagos,
@@ -220,6 +229,7 @@ public final class Factura {
         fechaEmision,
         dirEstablecimiento,
         moneda,
+        observaciones,
         items,
         totales,
         pagos,
@@ -246,6 +256,7 @@ public final class Factura {
         fechaEmision,
         dirEstablecimiento,
         moneda,
+        observaciones,
         items,
         totales,
         pagos,
@@ -272,6 +283,7 @@ public final class Factura {
         fechaEmision,
         dirEstablecimiento,
         moneda,
+        observaciones,
         items,
         totales,
         pagos,
@@ -298,6 +310,7 @@ public final class Factura {
         fechaEmision,
         dirEstablecimiento,
         moneda,
+        observaciones,
         items,
         totales,
         pagos,
@@ -324,6 +337,7 @@ public final class Factura {
         fechaEmision,
         dirEstablecimiento,
         moneda,
+        observaciones,
         items,
         totales,
         pagos,
@@ -350,6 +364,7 @@ public final class Factura {
         fechaEmision,
         dirEstablecimiento,
         moneda,
+        observaciones,
         items,
         totales,
         pagos,
@@ -376,6 +391,7 @@ public final class Factura {
         fechaEmision,
         dirEstablecimiento,
         moneda,
+        observaciones,
         items,
         totales,
         pagos,

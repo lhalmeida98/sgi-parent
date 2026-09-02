@@ -119,6 +119,7 @@ class FacturaServiceValidationTest {
         LocalDate.of(2026, 8, 27),
         "USD",
         "12345678",
+        null,
         List.of(),
         List.of()
     );

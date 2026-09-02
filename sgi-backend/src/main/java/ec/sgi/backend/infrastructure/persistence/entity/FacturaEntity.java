@@ -28,6 +28,7 @@ public class FacturaEntity {
   private LocalDate fechaEmision;
   private String dirEstablecimiento;
   private String moneda;
+  private String observaciones;
 
   private BigDecimal totalSinImpuestos;
   private BigDecimal totalDescuento;
@@ -127,6 +128,14 @@ public class FacturaEntity {
 
   public void setMoneda(String moneda) {
     this.moneda = moneda;
+  }
+
+  public String getObservaciones() {
+    return observaciones;
+  }
+
+  public void setObservaciones(String observaciones) {
+    this.observaciones = observaciones;
   }
 
   public BigDecimal getTotalSinImpuestos() {

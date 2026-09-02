@@ -1,6 +1,7 @@
 package ec.sri.einvoice.infrastructure.xml;
 
 import ec.sri.einvoice.application.port.out.XmlComprobanteGenerator;
+import ec.sri.einvoice.domain.model.CampoAdicional;
 import ec.sri.einvoice.domain.model.Comprobante;
 import ec.sri.einvoice.domain.model.Detalle;
 import ec.sri.einvoice.domain.model.InfoDocumento;
@@ -60,6 +61,7 @@ public class SimpleXmlComprobanteGenerator implements XmlComprobanteGenerator {
     xml.append(tag("tipoIdentificacionComprador", infoFactura.tipoIdentificacionComprador().codigo()));
     xml.append(tag("razonSocialComprador", escape(infoFactura.razonSocialComprador())));
     xml.append(tag("identificacionComprador", infoFactura.identificacionComprador()));
+    xml.append(optionalEscapedTag("direccionComprador", infoFactura.direccionComprador()));
     xml.append(tag("totalSinImpuestos", infoFactura.totalSinImpuestos().toPlainString()));
     xml.append(tag("totalDescuento", infoFactura.totalDescuento().toPlainString()));
     xml.append("<totalConImpuestos>");
@@ -100,6 +102,17 @@ public class SimpleXmlComprobanteGenerator implements XmlComprobanteGenerator {
       xml.append("</detalle>");
     }
     xml.append("</detalles>");
+    if (!comprobante.infoAdicional().isEmpty()) {
+      xml.append("<infoAdicional>");
+      for (CampoAdicional campo : comprobante.infoAdicional()) {
+        xml.append("<campoAdicional nombre=\"")
+            .append(escapeAttribute(campo.nombre()))
+            .append("\">")
+            .append(escape(campo.valor()))
+            .append("</campoAdicional>");
+      }
+      xml.append("</infoAdicional>");
+    }
     xml.append("</factura>");
     return xml.toString();
   }

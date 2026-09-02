@@ -1,6 +1,7 @@
 package ec.sri.einvoice.application.port.in;
 
 import ec.sri.einvoice.domain.model.Detalle;
+import ec.sri.einvoice.domain.model.CampoAdicional;
 import ec.sri.einvoice.domain.model.InfoDocumento;
 import ec.sri.einvoice.domain.model.InfoTributaria;
 import ec.sri.einvoice.domain.model.TipoComprobante;
@@ -11,6 +12,16 @@ public record EmitirComprobanteCommand(
     InfoTributaria infoTributaria,
     InfoDocumento infoDocumento,
     List<Detalle> detalles,
+    List<CampoAdicional> infoAdicional,
     String codigoNumerico
 ) {
+  public EmitirComprobanteCommand(
+      TipoComprobante tipo,
+      InfoTributaria infoTributaria,
+      InfoDocumento infoDocumento,
+      List<Detalle> detalles,
+      String codigoNumerico
+  ) {
+    this(tipo, infoTributaria, infoDocumento, detalles, List.of(), codigoNumerico);
+  }
 }

@@ -18,6 +18,7 @@ public class FacturaCommandMapper {
         request.fechaEmision(),
         request.moneda(),
         request.codigoNumerico(),
+        request.observaciones(),
         toItems(request.items()),
         toPagos(request.pagos())
     );

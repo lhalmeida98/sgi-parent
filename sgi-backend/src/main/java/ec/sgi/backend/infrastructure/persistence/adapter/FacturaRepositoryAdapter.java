@@ -28,6 +28,16 @@ public class FacturaRepositoryAdapter implements FacturaRepository {
 
   @Override
   public Factura save(Factura factura) {
+    if (factura.id() != null) {
+      Optional<Factura> actualizada = facturaJpaRepository.findById(factura.id())
+          .map(entity -> {
+            mapper.updateEntityPreservingDetalle(entity, factura);
+            return mapper.toDomain(facturaJpaRepository.save(entity));
+          });
+      if (actualizada.isPresent()) {
+        return actualizada.get();
+      }
+    }
     return mapper.toDomain(facturaJpaRepository.save(mapper.toEntity(factura)));
   }
 

@@ -89,6 +89,7 @@ class FacturaPdfServiceTest {
         fechaEmision,
         "Sucursal",
         "USD",
+        "Observacion prueba",
         List.of(new FacturaItem(
             null,
             1L,

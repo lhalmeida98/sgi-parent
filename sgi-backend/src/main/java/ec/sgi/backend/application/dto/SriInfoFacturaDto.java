@@ -12,6 +12,7 @@ public record SriInfoFacturaDto(
     String tipoIdentificacionComprador,
     String razonSocialComprador,
     String identificacionComprador,
+    String direccionComprador,
     BigDecimal totalSinImpuestos,
     BigDecimal totalDescuento,
     BigDecimal propina,

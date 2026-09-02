@@ -12,13 +12,13 @@ public record CrearFacturaCommand(
     LocalDate fechaEmision,
     String moneda,
     String codigoNumerico,
+    String observaciones,
     List<ItemFacturaCommand> items,
     List<PagoFacturaCommand> pagos
 ) {
   public CrearFacturaCommand {
     Objects.requireNonNull(empresaId, "empresaId");
     Objects.requireNonNull(clienteId, "clienteId");
-    Objects.requireNonNull(dirEstablecimiento, "dirEstablecimiento");
     Objects.requireNonNull(fechaEmision, "fechaEmision");
     Objects.requireNonNull(moneda, "moneda");
     Objects.requireNonNull(codigoNumerico, "codigoNumerico");

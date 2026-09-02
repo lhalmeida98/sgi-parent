@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import ec.sri.einvoice.domain.model.Ambiente;
+import ec.sri.einvoice.domain.model.CampoAdicional;
 import ec.sri.einvoice.domain.model.ClaveAcceso;
 import ec.sri.einvoice.domain.model.Comprobante;
 import ec.sri.einvoice.domain.model.ComprobanteId;
@@ -60,6 +61,9 @@ public class ComprobanteMapper {
     InfoTributaria infoTributaria = toInfoTributaria(payload.infoTributaria());
     InfoDocumento infoDocumento = toInfoFactura(payload.infoFactura());
     List<Detalle> detalles = payload.detalles().stream().map(this::toDetalle).toList();
+    List<CampoAdicional> infoAdicional = payload.infoAdicional() == null
+        ? List.of()
+        : payload.infoAdicional().stream().map(this::toCampoAdicional).toList();
     ClaveAcceso claveAcceso = entity.getClaveAcceso() != null ? ClaveAcceso.of(entity.getClaveAcceso()) : null;
 
     return Comprobante.reconstruir(
@@ -68,6 +72,7 @@ public class ComprobanteMapper {
         infoTributaria,
         infoDocumento,
         detalles,
+        infoAdicional,
         EstadoComprobante.valueOf(entity.getEstado()),
         claveAcceso,
         entity.getXml(),
@@ -86,7 +91,8 @@ public class ComprobanteMapper {
         comprobante.tipo().name(),
         toPayload(comprobante.infoTributaria()),
         toPayload((InfoFactura) comprobante.infoDocumento()),
-        comprobante.detalles().stream().map(this::toPayload).toList()
+        comprobante.detalles().stream().map(this::toPayload).toList(),
+        comprobante.infoAdicional().stream().map(this::toPayload).toList()
     );
     try {
       return objectMapper.writeValueAsString(payload);
@@ -131,6 +137,7 @@ public class ComprobanteMapper {
         infoFactura.tipoIdentificacionComprador().name(),
         infoFactura.razonSocialComprador(),
         infoFactura.identificacionComprador(),
+        infoFactura.direccionComprador(),
         infoFactura.totalSinImpuestos(),
         infoFactura.totalDescuento(),
         infoFactura.propina(),
@@ -171,6 +178,13 @@ public class ComprobanteMapper {
     );
   }
 
+  private ComprobantePayload.CampoAdicionalPayload toPayload(CampoAdicional campo) {
+    return new ComprobantePayload.CampoAdicionalPayload(
+        campo.nombre(),
+        campo.valor()
+    );
+  }
+
   private InfoTributaria toInfoTributaria(ComprobantePayload.InfoTributariaPayload payload) {
     return new InfoTributaria(
         Ambiente.valueOf(payload.ambiente()),
@@ -199,6 +213,7 @@ public class ComprobanteMapper {
         TipoIdentificacion.valueOf(payload.tipoIdentificacionComprador()),
         payload.razonSocialComprador(),
         payload.identificacionComprador(),
+        payload.direccionComprador(),
         payload.totalSinImpuestos(),
         payload.totalDescuento(),
         payload.propina(),
@@ -235,6 +250,13 @@ public class ComprobanteMapper {
         payload.codigo(),
         payload.codigoPorcentaje(),
         payload.baseImponible(),
+        payload.valor()
+    );
+  }
+
+  private CampoAdicional toCampoAdicional(ComprobantePayload.CampoAdicionalPayload payload) {
+    return new CampoAdicional(
+        payload.nombre(),
         payload.valor()
     );
   }

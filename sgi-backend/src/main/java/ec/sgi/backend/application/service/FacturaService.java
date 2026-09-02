@@ -230,6 +230,7 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
     List<FacturaPago> pagos = mapPagos(command.pagos());
     validarPagos(pagos, calculo.totales().importeTotal());
     String secuencial = normalizeSecuencial(empresa.secuencial());
+    String dirEstablecimiento = resolveDirEstablecimiento(command.dirEstablecimiento(), empresa.dirMatriz());
     InfoTributariaData infoTributaria = new InfoTributariaData(
         empresa.ambiente(),
         empresa.tipoEmision(),
@@ -254,8 +255,9 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
         command.preordenId(),
         infoTributaria,
         command.fechaEmision(),
-        command.dirEstablecimiento(),
+        dirEstablecimiento,
         command.moneda(),
+        normalizeNullable(command.observaciones()),
         calculo.items(),
         calculo.totales(),
         pagos,
@@ -1415,6 +1417,18 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
     }
     String trimmed = value.trim();
     return trimmed.isEmpty() ? null : trimmed;
+  }
+
+  private String resolveDirEstablecimiento(String dirEstablecimiento, String dirMatriz) {
+    String normalized = normalizeNullable(dirEstablecimiento);
+    if (normalized != null) {
+      return normalized;
+    }
+    String matriz = normalizeNullable(dirMatriz);
+    if (matriz != null) {
+      return matriz;
+    }
+    throw new BusinessRuleException("Direccion matriz requerida");
   }
 
   private LocalDateTime parseFechaAutorizacion(String value) {

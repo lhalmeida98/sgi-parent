@@ -79,6 +79,7 @@ public class EmitirComprobanteService implements EmitirComprobanteUseCase {
         command.infoTributaria(),
         command.infoDocumento(),
         command.detalles(),
+        command.infoAdicional(),
         ahora
     );
 

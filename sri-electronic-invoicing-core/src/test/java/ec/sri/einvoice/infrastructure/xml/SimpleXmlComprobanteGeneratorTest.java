@@ -2,12 +2,14 @@ package ec.sri.einvoice.infrastructure.xml;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import ec.sri.einvoice.domain.model.CampoAdicional;
 import ec.sri.einvoice.domain.ComprobanteTestData;
 import ec.sri.einvoice.domain.model.ClaveAcceso;
 import ec.sri.einvoice.domain.model.Comprobante;
 import ec.sri.einvoice.domain.model.InfoFactura;
 import ec.sri.einvoice.domain.model.InfoTributaria;
 import ec.sri.einvoice.infrastructure.config.AppProperties;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class SimpleXmlComprobanteGeneratorTest {
@@ -21,6 +23,9 @@ class SimpleXmlComprobanteGeneratorTest {
 
     assertThat(xml).contains("<contribuyenteRimpe>CONTRIBUYENTE RÉGIMEN RIMPE</contribuyenteRimpe>");
     assertThat(xml).contains("<obligadoContabilidad>NO</obligadoContabilidad>");
+    assertThat(xml).contains("<direccionComprador>Guayas - Guayaquil</direccionComprador>");
+    assertThat(xml).contains("<infoAdicional>");
+    assertThat(xml).contains("<campoAdicional nombre=\"Correo\">cliente@example.com</campoAdicional>");
     new XsdSriXmlValidator().validar(comprobante.tipo(), xml);
   }
 
@@ -63,6 +68,7 @@ class SimpleXmlComprobanteGeneratorTest {
         baseFactura.tipoIdentificacionComprador(),
         baseFactura.razonSocialComprador(),
         baseFactura.identificacionComprador(),
+        "Guayas - Guayaquil",
         baseFactura.totalSinImpuestos(),
         baseFactura.totalDescuento(),
         baseFactura.propina(),
@@ -77,6 +83,10 @@ class SimpleXmlComprobanteGeneratorTest {
         infoTributaria,
         infoFactura,
         base.detalles(),
+        List.of(
+            new CampoAdicional("Correo", "cliente@example.com"),
+            new CampoAdicional("Direccion cliente", "Guayas - Guayaquil")
+        ),
         base.estado(),
         infoTributaria.claveAcceso(),
         base.xml(),

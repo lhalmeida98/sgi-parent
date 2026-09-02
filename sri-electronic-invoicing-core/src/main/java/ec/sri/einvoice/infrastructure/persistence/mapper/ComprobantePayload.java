@@ -8,7 +8,8 @@ public record ComprobantePayload(
     String tipo,
     InfoTributariaPayload infoTributaria,
     InfoFacturaPayload infoFactura,
-    List<DetallePayload> detalles
+    List<DetallePayload> detalles,
+    List<CampoAdicionalPayload> infoAdicional
 ) {
   public record InfoTributariaPayload(
       String ambiente,
@@ -36,6 +37,7 @@ public record ComprobantePayload(
       String tipoIdentificacionComprador,
       String razonSocialComprador,
       String identificacionComprador,
+      String direccionComprador,
       BigDecimal totalSinImpuestos,
       BigDecimal totalDescuento,
       BigDecimal propina,
@@ -70,6 +72,12 @@ public record ComprobantePayload(
       String codigoPorcentaje,
       BigDecimal baseImponible,
       BigDecimal valor
+  ) {
+  }
+
+  public record CampoAdicionalPayload(
+      String nombre,
+      String valor
   ) {
   }
 }

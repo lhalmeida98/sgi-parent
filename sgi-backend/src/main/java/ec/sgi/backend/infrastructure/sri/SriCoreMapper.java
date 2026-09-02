@@ -1,5 +1,6 @@
 package ec.sgi.backend.infrastructure.sri;
 
+import ec.sgi.backend.application.dto.SriCampoAdicionalDto;
 import ec.sgi.backend.application.dto.SriConsultaEstadoRequest;
 import ec.sgi.backend.application.dto.SriDetalleDto;
 import ec.sgi.backend.application.dto.SriEmitirFacturaRequest;
@@ -11,6 +12,7 @@ import ec.sgi.backend.application.exception.BusinessRuleException;
 import ec.sri.einvoice.application.port.in.ConsultarComprobanteCommand;
 import ec.sri.einvoice.application.port.in.EmitirComprobanteCommand;
 import ec.sri.einvoice.domain.model.Ambiente;
+import ec.sri.einvoice.domain.model.CampoAdicional;
 import ec.sri.einvoice.domain.model.ClaveAcceso;
 import ec.sri.einvoice.domain.model.Detalle;
 import ec.sri.einvoice.domain.model.Impuesto;
@@ -54,6 +56,7 @@ public final class SriCoreMapper {
         parseTipoIdentificacion(infoFacturaDto.tipoIdentificacionComprador()),
         infoFacturaDto.razonSocialComprador(),
         infoFacturaDto.identificacionComprador(),
+        infoFacturaDto.direccionComprador(),
         infoFacturaDto.totalSinImpuestos(),
         infoFacturaDto.totalDescuento(),
         infoFacturaDto.propina(),
@@ -67,6 +70,7 @@ public final class SriCoreMapper {
         infoTrib,
         infoFactura,
         toDetalles(request.detalles()),
+        toInfoAdicional(request.infoAdicional()),
         request.codigoNumerico()
     );
   }
@@ -93,6 +97,17 @@ public final class SriCoreMapper {
             detalle.precioTotalSinImpuesto(),
             toImpuestos(detalle.impuestos())
         ))
+        .toList();
+  }
+
+  private static List<CampoAdicional> toInfoAdicional(List<SriCampoAdicionalDto> campos) {
+    if (campos == null || campos.isEmpty()) {
+      return List.of();
+    }
+    return campos.stream()
+        .filter(campo -> campo != null && !isBlank(campo.nombre()) && !isBlank(campo.valor()))
+        .limit(15)
+        .map(campo -> new CampoAdicional(campo.nombre().trim(), campo.valor().trim()))
         .toList();
   }
 
@@ -154,5 +169,9 @@ public final class SriCoreMapper {
       return "";
     }
     return value.trim().toUpperCase();
+  }
+
+  private static boolean isBlank(String value) {
+    return value == null || value.trim().isEmpty();
   }
 }

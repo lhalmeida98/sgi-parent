@@ -90,6 +90,7 @@ public class FacturaPdfService implements GenerarFacturaPdfUseCase {
     String fechaAutorizacion = formatFechaHora(factura.fechaAutorizacion());
     String claveAcceso = safe(factura.claveAcceso());
     String numeroAutorizacion = safe(factura.numeroAutorizacion());
+    String dirEstablecimiento = resolveDirEstablecimiento(factura.dirEstablecimiento(), info.dirMatriz());
 
     String logoData = loadLogoDataUri(empresa.logoRuta());
     String barcodeData = claveAcceso.isBlank() ? "" : createBarcodeDataUri(claveAcceso);
@@ -98,15 +99,25 @@ public class FacturaPdfService implements GenerarFacturaPdfUseCase {
     for (FacturaItem item : factura.items()) {
       itemsRows.append("<tr>")
           .append("<td>").append(escapeHtml(item.codigoPrincipal())).append("</td>")
+          .append("<td>").append(escapeHtml(item.codigoPrincipal())).append("</td>")
           .append("<td class='text-right'>").append(formatCantidad(item.cantidad())).append("</td>")
           .append("<td>").append(escapeHtml(item.descripcion())).append("</td>")
+          .append("<td></td>")
           .append("<td class='text-right'>").append(formatMoney(item.precioUnitario())).append("</td>")
+          .append("<td class='text-right'>0.00</td>")
+          .append("<td class='text-right'>0.00</td>")
           .append("<td class='text-right'>").append(formatMoney(item.descuento())).append("</td>")
           .append("<td class='text-right'>").append(formatMoney(item.precioTotalSinImpuesto())).append("</td>")
           .append("</tr>");
     }
 
     String pagosRows = buildPagoRow(factura.pagos(), factura.totales().importeTotal());
+    String adicionalesRows = buildInfoAdicionalRows(
+        cliente,
+        dirEstablecimiento,
+        factura.observaciones(),
+        info.regimenTributario().leyendaSri()
+    );
 
     StringBuilder html = new StringBuilder(4096);
     html.append("<?xml version='1.0' encoding='UTF-8'?>\n")
@@ -114,23 +125,27 @@ public class FacturaPdfService implements GenerarFacturaPdfUseCase {
         .append("<head>\n")
         .append("<meta charset='utf-8' />\n")
         .append("<style>\n")
-        .append("  @page { size: A4; margin: 14mm; }\n")
-        .append("  body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 11px; color: #111; }\n")
+        .append("  @page { size: A4; margin: 8mm; }\n")
+        .append("  body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 10px; color: #111; }\n")
         .append("  .row { width: 100%; }\n")
         .append("  .header-table { width: 100%; border-collapse: collapse; }\n")
         .append("  .header-table td { vertical-align: top; }\n")
-        .append("  .logo-box { width: 50%; }\n")
-        .append("  .factura-box { width: 50%; border: 1px solid #222; padding: 10px; }\n")
-        .append("  .factura-box h1 { margin: 6px 0; font-size: 18px; letter-spacing: 4px; }\n")
-        .append("  .empresa-box { border: 1px solid #222; padding: 8px; margin-top: 6px; }\n")
+        .append("  .left-panel { width: 64%; padding-right: 8px; }\n")
+        .append("  .right-panel { width: 36%; }\n")
+        .append("  .logo-box { height: 88px; }\n")
+        .append("  .no-logo { color: #e00; font-size: 28px; font-weight: bold; letter-spacing: 3px; padding: 10px 0 0 20px; }\n")
+        .append("  .factura-box { border: 1px solid #222; border-radius: 10px; padding: 8px; }\n")
+        .append("  .factura-box h1 { margin: 4px 0; font-size: 20px; letter-spacing: 7px; font-weight: normal; }\n")
+        .append("  .empresa-box { border: 1px solid #222; border-radius: 10px; padding: 8px; margin-top: 6px; min-height: 112px; }\n")
         .append("  .section-title { font-weight: bold; background: #f2f2f2; padding: 4px 6px; border: 1px solid #222; }\n")
         .append("  .info-table { width: 100%; border-collapse: collapse; margin-top: 6px; }\n")
         .append("  .info-table td { border: 1px solid #222; padding: 4px 6px; }\n")
-        .append("  .items-table { width: 100%; border-collapse: collapse; margin-top: 8px; }\n")
-        .append("  .items-table th, .items-table td { border: 1px solid #222; padding: 4px 6px; }\n")
+        .append("  .items-table { width: 100%; border-collapse: collapse; margin-top: 6px; }\n")
+        .append("  .items-table th, .items-table td { border: 1px solid #222; padding: 4px 5px; }\n")
         .append("  .items-table th { background: #f2f2f2; }\n")
         .append("  .totals-table { width: 100%; border-collapse: collapse; }\n")
         .append("  .totals-table td { border: 1px solid #222; padding: 3px 6px; }\n")
+        .append("  .label { display: inline-block; min-width: 105px; }\n")
         .append("  .text-right { text-align: right; }\n")
         .append("  .barcode { margin-top: 6px; }\n")
         .append("  .mt-8 { margin-top: 8px; }\n")
@@ -142,9 +157,11 @@ public class FacturaPdfService implements GenerarFacturaPdfUseCase {
         .append("<body>\n")
         .append("  <table class='header-table'>\n")
         .append("    <tr>\n")
-        .append("      <td class='logo-box'>\n")
-        .append(logoData.isBlank() ? "        <div style='height:80px;'></div>\n"
+        .append("      <td class='left-panel'>\n")
+        .append("        <div class='logo-box'>\n")
+        .append(logoData.isBlank() ? "          <div class='no-logo'>NO TIENE LOGO</div>\n"
             : "        <img src='" + logoData + "' style='max-height:90px; max-width:280px;' />\n")
+        .append("        </div>\n")
         .append("        <div class='empresa-box'>\n")
         .append("          <div style='font-weight:bold; text-align:center;'>")
         .append(escapeHtml(info.razonSocial())).append("</div>\n")
@@ -152,7 +169,13 @@ public class FacturaPdfService implements GenerarFacturaPdfUseCase {
         .append(escapeHtml(info.nombreComercial())).append("</div>\n")
         .append("          <div style='margin-top:6px;'><strong>Direccion matriz:</strong> ")
         .append(escapeHtml(info.dirMatriz())).append("</div>\n")
-        .append("          <div><strong>OBLIGADO A LLEVAR CONTABILIDAD:</strong> ")
+        .append("          <div><strong>Direccion sucursal:</strong> ")
+        .append(escapeHtml(dirEstablecimiento)).append("</div>\n");
+    if (info.contribuyenteEspecial()) {
+      html.append("          <div><strong>Contribuyente Especial Nro.:</strong> ")
+          .append(escapeHtml(info.numeroContribuyenteEspecial())).append("</div>\n");
+    }
+    html.append("          <div><strong>OBLIGADO A LLEVAR CONTABILIDAD:</strong> ")
         .append(info.obligadoContabilidad() ? "SI" : "NO").append("</div>\n");
     String leyendaRimpe = info.regimenTributario().leyendaSri();
     if (leyendaRimpe != null) {
@@ -162,7 +185,8 @@ public class FacturaPdfService implements GenerarFacturaPdfUseCase {
         .append(escapeHtml(info.ruc())).append("</div>\n")
         .append("        </div>\n")
         .append("      </td>\n")
-        .append("      <td class='factura-box'>\n")
+        .append("      <td class='right-panel'>\n")
+        .append("        <div class='factura-box'>\n")
         .append("        <div><strong>R.U.C.:</strong> ")
         .append(escapeHtml(info.ruc())).append("</div>\n")
         .append("        <h1>FACTURA</h1>\n")
@@ -182,6 +206,7 @@ public class FacturaPdfService implements GenerarFacturaPdfUseCase {
           .append("' style='width:100%; height:70px;' /></div>\n");
     }
     html.append("        <div style='text-align:center;'>").append(escapeHtml(claveAcceso)).append("</div>\n")
+        .append("        </div>\n")
         .append("      </td>\n")
         .append("    </tr>\n")
         .append("  </table>\n\n")
@@ -201,9 +226,13 @@ public class FacturaPdfService implements GenerarFacturaPdfUseCase {
         .append("    <thead>\n")
         .append("      <tr>\n")
         .append("        <th>Codigo Principal</th>\n")
+        .append("        <th>Cod. Auxiliar</th>\n")
         .append("        <th>Cantidad</th>\n")
         .append("        <th>Descripcion</th>\n")
+        .append("        <th>Detalle Adicional</th>\n")
         .append("        <th>Precio unitario</th>\n")
+        .append("        <th>Subsidio</th>\n")
+        .append("        <th>Precio sin Subsidio</th>\n")
         .append("        <th>Descuento</th>\n")
         .append("        <th>Precio total</th>\n")
         .append("      </tr>\n")
@@ -217,9 +246,7 @@ public class FacturaPdfService implements GenerarFacturaPdfUseCase {
         .append("      <td>\n")
         .append("        <div class='section-title'>Informacion adicional</div>\n")
         .append("        <table class='info-table'>\n")
-        .append("          <tr>\n")
-        .append("            <td><strong>Correo:</strong> ").append(escapeHtml(cliente.email())).append("</td>\n")
-        .append("          </tr>\n")
+        .append(adicionalesRows)
         .append("        </table>\n")
         .append("        <div class='section-title mt-8'>Forma de pago</div>\n")
         .append("        <table class='items-table'>\n")
@@ -367,5 +394,44 @@ public class FacturaPdfService implements GenerarFacturaPdfUseCase {
       suma = totalFactura;
     }
     return "<tr><td>" + escapeHtml(formaPago) + "</td><td class='text-right'>" + formatMoney(suma) + "</td></tr>";
+  }
+
+  private String buildInfoAdicionalRows(
+      Cliente cliente,
+      String dirEstablecimiento,
+      String observaciones,
+      String leyendaRimpe
+  ) {
+    StringBuilder rows = new StringBuilder();
+    appendInfoAdicionalRow(rows, "Correo", cliente.email());
+    appendInfoAdicionalRow(rows, "Direccion cliente", cliente.direccion());
+    appendInfoAdicionalRow(rows, "Observacion", observaciones);
+    appendInfoAdicionalRow(rows, "Direccion establecimiento", dirEstablecimiento);
+    appendInfoAdicionalRow(rows, "Adicional", leyendaRimpe);
+    if (rows.isEmpty()) {
+      rows.append("<tr><td></td><td></td></tr>\n");
+    }
+    return rows.toString();
+  }
+
+  private void appendInfoAdicionalRow(StringBuilder rows, String label, String value) {
+    if (value == null || value.isBlank()) {
+      return;
+    }
+    rows.append("          <tr><td style='width:34%;'><strong>")
+        .append(escapeHtml(label))
+        .append(":</strong></td><td>")
+        .append(escapeHtml(value.trim()))
+        .append("</td></tr>\n");
+  }
+
+  private String resolveDirEstablecimiento(String dirEstablecimiento, String dirMatriz) {
+    if (dirEstablecimiento != null && !dirEstablecimiento.isBlank()) {
+      return dirEstablecimiento.trim();
+    }
+    if (dirMatriz != null && !dirMatriz.isBlank()) {
+      return dirMatriz.trim();
+    }
+    return "";
   }
 }

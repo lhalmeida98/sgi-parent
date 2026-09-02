@@ -14,6 +14,7 @@ public final class Comprobante {
   private InfoTributaria infoTributaria;
   private InfoDocumento infoDocumento;
   private final List<Detalle> detalles;
+  private final List<CampoAdicional> infoAdicional;
   private EstadoComprobante estado;
   private ClaveAcceso claveAcceso;
   private String xml;
@@ -32,6 +33,7 @@ public final class Comprobante {
       InfoTributaria infoTributaria,
       InfoDocumento infoDocumento,
       List<Detalle> detalles,
+      List<CampoAdicional> infoAdicional,
       EstadoComprobante estado,
       ClaveAcceso claveAcceso,
       String xml,
@@ -48,6 +50,7 @@ public final class Comprobante {
     this.infoTributaria = Objects.requireNonNull(infoTributaria, "infoTributaria");
     this.infoDocumento = Objects.requireNonNull(infoDocumento, "infoDocumento");
     this.detalles = List.copyOf(detalles);
+    this.infoAdicional = List.copyOf(infoAdicional == null ? List.of() : infoAdicional);
     this.estado = Objects.requireNonNull(estado, "estado");
     this.claveAcceso = claveAcceso;
     this.xml = xml;
@@ -66,6 +69,7 @@ public final class Comprobante {
       InfoTributaria infoTributaria,
       InfoDocumento infoDocumento,
       List<Detalle> detalles,
+      List<CampoAdicional> infoAdicional,
       Instant ahora
   ) {
     Comprobante comprobante = new Comprobante(
@@ -74,6 +78,7 @@ public final class Comprobante {
         infoTributaria,
         infoDocumento,
         detalles,
+        infoAdicional,
         EstadoComprobante.CREADO,
         null,
         null,
@@ -87,6 +92,55 @@ public final class Comprobante {
     );
     comprobante.registrarEvento(ComprobanteEventType.CREADO, "Comprobante creado", ahora);
     return comprobante;
+  }
+
+  public static Comprobante crear(
+      ComprobanteId id,
+      TipoComprobante tipo,
+      InfoTributaria infoTributaria,
+      InfoDocumento infoDocumento,
+      List<Detalle> detalles,
+      Instant ahora
+  ) {
+    return crear(id, tipo, infoTributaria, infoDocumento, detalles, List.of(), ahora);
+  }
+
+  public static Comprobante reconstruir(
+      ComprobanteId id,
+      TipoComprobante tipo,
+      InfoTributaria infoTributaria,
+      InfoDocumento infoDocumento,
+      List<Detalle> detalles,
+      List<CampoAdicional> infoAdicional,
+      EstadoComprobante estado,
+      ClaveAcceso claveAcceso,
+      String xml,
+      String xmlFirmado,
+      String numeroAutorizacion,
+      String ultimoError,
+      int intentosEnvio,
+      Instant siguienteReintento,
+      Instant creadoEn,
+      Instant actualizadoEn
+  ) {
+    return new Comprobante(
+        id,
+        tipo,
+        infoTributaria,
+        infoDocumento,
+        detalles,
+        infoAdicional,
+        estado,
+        claveAcceso,
+        xml,
+        xmlFirmado,
+        numeroAutorizacion,
+        ultimoError,
+        intentosEnvio,
+        siguienteReintento,
+        creadoEn,
+        actualizadoEn
+    );
   }
 
   public static Comprobante reconstruir(
@@ -106,12 +160,13 @@ public final class Comprobante {
       Instant creadoEn,
       Instant actualizadoEn
   ) {
-    return new Comprobante(
+    return reconstruir(
         id,
         tipo,
         infoTributaria,
         infoDocumento,
         detalles,
+        List.of(),
         estado,
         claveAcceso,
         xml,
@@ -143,6 +198,10 @@ public final class Comprobante {
 
   public List<Detalle> detalles() {
     return detalles;
+  }
+
+  public List<CampoAdicional> infoAdicional() {
+    return infoAdicional;
   }
 
   public EstadoComprobante estado() {

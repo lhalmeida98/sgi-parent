@@ -13,6 +13,7 @@ public final class InfoFactura implements InfoDocumento {
   private final TipoIdentificacion tipoIdentificacionComprador;
   private final String razonSocialComprador;
   private final String identificacionComprador;
+  private final String direccionComprador;
   private final BigDecimal totalSinImpuestos;
   private final BigDecimal totalDescuento;
   private final BigDecimal propina;
@@ -28,6 +29,7 @@ public final class InfoFactura implements InfoDocumento {
       TipoIdentificacion tipoIdentificacionComprador,
       String razonSocialComprador,
       String identificacionComprador,
+      String direccionComprador,
       BigDecimal totalSinImpuestos,
       BigDecimal totalDescuento,
       BigDecimal propina,
@@ -42,6 +44,7 @@ public final class InfoFactura implements InfoDocumento {
     this.tipoIdentificacionComprador = Objects.requireNonNull(tipoIdentificacionComprador, "tipoIdentificacionComprador");
     this.razonSocialComprador = Objects.requireNonNull(razonSocialComprador, "razonSocialComprador");
     this.identificacionComprador = Objects.requireNonNull(identificacionComprador, "identificacionComprador");
+    this.direccionComprador = direccionComprador;
     this.totalSinImpuestos = Objects.requireNonNull(totalSinImpuestos, "totalSinImpuestos");
     this.totalDescuento = Objects.requireNonNull(totalDescuento, "totalDescuento");
     this.propina = Objects.requireNonNull(propina, "propina");
@@ -71,6 +74,7 @@ public final class InfoFactura implements InfoDocumento {
         tipoIdentificacionComprador,
         razonSocialComprador,
         identificacionComprador,
+        null,
         totalSinImpuestos,
         totalDescuento,
         propina,
@@ -111,6 +115,10 @@ public final class InfoFactura implements InfoDocumento {
 
   public String identificacionComprador() {
     return identificacionComprador;
+  }
+
+  public String direccionComprador() {
+    return direccionComprador;
   }
 
   public BigDecimal totalSinImpuestos() {

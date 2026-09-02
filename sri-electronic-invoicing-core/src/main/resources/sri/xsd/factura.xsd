@@ -171,6 +171,7 @@
       <xs:element name="tipoIdentificacionComprador" type="tipoIdentificacionType"/>
       <xs:element name="razonSocialComprador" type="text300"/>
       <xs:element name="identificacionComprador" type="text20"/>
+      <xs:element name="direccionComprador" type="text300" minOccurs="0"/>
       <xs:element name="totalSinImpuestos" type="decimal14_6"/>
       <xs:element name="totalDescuento" type="decimal14_6"/>
       <xs:element name="totalConImpuestos" type="totalConImpuestosType"/>
