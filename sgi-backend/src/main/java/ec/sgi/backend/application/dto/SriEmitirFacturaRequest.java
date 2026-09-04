@@ -6,6 +6,7 @@ public record SriEmitirFacturaRequest(
     SriInfoTributariaDto infoTributaria,
     SriInfoFacturaDto infoFactura,
     List<SriDetalleDto> detalles,
+    List<SriPagoDto> pagos,
     List<SriCampoAdicionalDto> infoAdicional,
     String codigoNumerico
 ) {

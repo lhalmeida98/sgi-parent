@@ -3,6 +3,7 @@ package ec.sgi.backend.application.service;
 import ec.sgi.backend.application.dto.FacturaCreateResult;
 import ec.sgi.backend.application.dto.FacturaEstadoResult;
 import ec.sgi.backend.application.dto.FacturaProcesoResult;
+import ec.sgi.backend.application.dto.FacturaPagoDto;
 import ec.sgi.backend.application.dto.FacturaResumenPageResult;
 import ec.sgi.backend.application.dto.FacturaResumenResult;
 import ec.sgi.backend.application.dto.FacturaTotalesDto;
@@ -229,7 +230,10 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
     FacturaCalculoResult calculo = totalsCalculator.calcular(items);
     List<FacturaPago> pagos = mapPagos(command.pagos());
     validarPagos(pagos, calculo.totales().importeTotal());
-    String secuencial = normalizeSecuencial(empresa.secuencial());
+    boolean ambientePruebas = esAmbientePruebas(empresa.ambiente());
+    String secuencial = normalizeSecuencial(
+        ambientePruebas ? empresa.secuencialPruebas() : empresa.secuencial()
+    );
     String dirEstablecimiento = resolveDirEstablecimiento(command.dirEstablecimiento(), empresa.dirMatriz());
     InfoTributariaData infoTributaria = new InfoTributariaData(
         empresa.ambiente(),
@@ -274,7 +278,9 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
     );
     factura = facturaRepository.save(factura);
 
-    ajustarInventarioPorFactura(calculo.items(), preorden, empresa.id());
+    if (!ambientePruebas) {
+      ajustarInventarioPorFactura(calculo.items(), preorden, empresa.id());
+    }
 
     try {
       Path firmaPath = resolveFirmaPath(firma);
@@ -320,15 +326,19 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
       sincronizarDocumentoClienteSiAplica(actualizadaFactura);
       if (actualizadaFactura.estado() != FacturaEstado.NO_AUTORIZADA
           && actualizadaFactura.estado() != FacturaEstado.ERROR) {
-        Empresa actualizada = empresa.withSecuencial(nextSecuencial(secuencial));
+        Empresa actualizada = ambientePruebas
+            ? empresa.withSecuencialPruebas(nextSecuencial(secuencial))
+            : empresa.withSecuencial(nextSecuencial(secuencial));
         empresaRepository.save(actualizada);
       }
       return toCreateResult(actualizadaFactura);
     } catch (SriCoreException ex) {
-      try {
-        revertirInventarioPorFactura(calculo.items(), preorden, empresa.id());
-      } catch (RuntimeException revertEx) {
-        log.error("No se pudo revertir inventario para factura {}: {}", factura.id(), revertEx.getMessage());
+      if (!ambientePruebas) {
+        try {
+          revertirInventarioPorFactura(calculo.items(), preorden, empresa.id());
+        } catch (RuntimeException revertEx) {
+          log.error("No se pudo revertir inventario para factura {}: {}", factura.id(), revertEx.getMessage());
+        }
       }
       Factura error = factura
           .withEstado(FacturaEstado.ERROR)
@@ -378,14 +388,28 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
 
   @Override
   public FacturaResumenPageResult listarPorEmpresa(Long empresaId, LocalDate fechaDesde, LocalDate fechaHasta,
-      int page, int size) {
+      int page, int size, String ambiente) {
     LocalDate desde = fechaDesde == null ? LocalDate.now() : fechaDesde;
     LocalDate hasta = fechaHasta == null ? desde : fechaHasta;
     if (hasta.isBefore(desde)) {
       throw new BusinessRuleException("fechaHasta debe ser mayor o igual a fechaDesde");
     }
-    PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "fechaEmision").and(Sort.by("id")));
-    Page<Factura> facturas = facturaRepository.findByEmpresaIdAndFechaEmisionBetween(empresaId, desde, hasta, pageable);
+    PageRequest pageable = PageRequest.of(
+        page,
+        size,
+        Sort.by(Sort.Direction.DESC, "infoSecuencial")
+            .and(Sort.by(Sort.Direction.DESC, "id"))
+    );
+    List<String> ambientes = normalizeAmbientesFiltro(ambiente);
+    Page<Factura> facturas = ambientes.isEmpty()
+        ? facturaRepository.findByEmpresaIdAndFechaEmisionBetween(empresaId, desde, hasta, pageable)
+        : facturaRepository.findByEmpresaIdAndFechaEmisionBetweenAndAmbientes(
+            empresaId,
+            desde,
+            hasta,
+            ambientes,
+            pageable
+        );
 
     List<Cliente> clientes = clienteRepository.findByEmpresaId(empresaId);
     Map<Long, Cliente> clientesPorId = clientes.stream()
@@ -401,6 +425,18 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
         facturas.getTotalElements(),
         facturas.getTotalPages()
     );
+  }
+
+  private List<String> normalizeAmbientesFiltro(String ambiente) {
+    if (ambiente == null || ambiente.isBlank()) {
+      return List.of();
+    }
+    String normalized = ambiente.trim().toUpperCase(Locale.ROOT);
+    return switch (normalized) {
+      case "2", "PRODUCCION" -> List.of("2", "PRODUCCION");
+      case "1", "PRUEBAS" -> List.of("1", "PRUEBAS");
+      default -> throw new BusinessRuleException("Ambiente no valido: " + ambiente);
+    };
   }
 
   @Override
@@ -560,6 +596,7 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
         factura.empresaId(),
         factura.clienteId(),
         cliente == null ? "" : cliente.razonSocial(),
+        factura.infoTributaria().ambiente(),
         factura.fechaEmision(),
         numeroFactura,
         factura.estado().name(),
@@ -570,7 +607,10 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
         factura.totales().totalSinImpuestos(),
         factura.totales().totalDescuento(),
         factura.totales().totalImpuestos(),
-        factura.totales().importeTotal()
+        factura.totales().importeTotal(),
+        factura.pagos().stream()
+            .map(pago -> new FacturaPagoDto(pago.formaPago(), pago.monto()))
+            .toList()
     );
   }
 
@@ -710,6 +750,9 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
       return;
     }
     if (factura.estado() != FacturaEstado.AUTORIZADA) {
+      return;
+    }
+    if (!esProduccion(factura.infoTributaria().ambiente())) {
       return;
     }
     String numeroFactura = buildNumeroFactura(factura.infoTributaria());
@@ -1060,6 +1103,9 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
     if (!requiereReversion(anterior.estado(), actualizada.estado())) {
       return;
     }
+    if (!esProduccion(actualizada.infoTributaria().ambiente())) {
+      return;
+    }
     Preorden preorden = obtenerPreordenParaFactura(actualizada);
     revertirInventarioPorFactura(actualizada.items(), preorden, actualizada.empresaId());
   }
@@ -1403,6 +1449,10 @@ public class FacturaService implements CrearFacturaUseCase, ConsultarEstadoFactu
   private boolean esProduccion(String ambiente) {
     String normalized = ambiente == null ? "" : ambiente.trim().toUpperCase(Locale.ROOT);
     return "2".equals(normalized) || "PRODUCCION".equals(normalized);
+  }
+
+  private boolean esAmbientePruebas(String ambiente) {
+    return !esProduccion(ambiente);
   }
 
   private void requireConfigured(String label, String value, List<String> faltantes) {

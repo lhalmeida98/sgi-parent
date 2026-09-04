@@ -109,6 +109,19 @@
     </xs:restriction>
   </xs:simpleType>
 
+  <xs:simpleType name="formaPagoType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="01"/>
+      <xs:enumeration value="15"/>
+      <xs:enumeration value="16"/>
+      <xs:enumeration value="17"/>
+      <xs:enumeration value="18"/>
+      <xs:enumeration value="19"/>
+      <xs:enumeration value="20"/>
+      <xs:enumeration value="21"/>
+    </xs:restriction>
+  </xs:simpleType>
+
   <xs:simpleType name="contribuyenteRimpeType">
     <xs:restriction base="xs:string">
       <xs:enumeration value="CONTRIBUYENTE RÉGIMEN RIMPE"/>
@@ -162,6 +175,21 @@
     </xs:sequence>
   </xs:complexType>
 
+  <xs:complexType name="pagoType">
+    <xs:sequence>
+      <xs:element name="formaPago" type="formaPagoType"/>
+      <xs:element name="total" type="decimal14_6"/>
+      <xs:element name="plazo" type="digits1to8" minOccurs="0"/>
+      <xs:element name="unidadTiempo" type="text15" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="pagosType">
+    <xs:sequence>
+      <xs:element name="pago" type="pagoType" minOccurs="1" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
   <xs:complexType name="infoFacturaType">
     <xs:sequence>
       <xs:element name="fechaEmision" type="dateDDMMYYYY"/>
@@ -178,6 +206,7 @@
       <xs:element name="propina" type="decimal14_6"/>
       <xs:element name="importeTotal" type="decimal14_6"/>
       <xs:element name="moneda" type="text15"/>
+      <xs:element name="pagos" type="pagosType" minOccurs="0"/>
     </xs:sequence>
   </xs:complexType>
 

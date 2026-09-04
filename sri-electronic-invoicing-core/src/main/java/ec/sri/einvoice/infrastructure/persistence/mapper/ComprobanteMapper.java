@@ -14,6 +14,7 @@ import ec.sri.einvoice.domain.model.InfoDocumento;
 import ec.sri.einvoice.domain.model.InfoFactura;
 import ec.sri.einvoice.domain.model.InfoTributaria;
 import ec.sri.einvoice.domain.model.Impuesto;
+import ec.sri.einvoice.domain.model.Pago;
 import ec.sri.einvoice.domain.model.TipoComprobante;
 import ec.sri.einvoice.domain.model.TipoEmision;
 import ec.sri.einvoice.domain.model.TipoIdentificacion;
@@ -143,7 +144,17 @@ public class ComprobanteMapper {
         infoFactura.propina(),
         infoFactura.importeTotal(),
         infoFactura.moneda(),
-        infoFactura.totalConImpuestos().stream().map(this::toPayload).toList()
+        infoFactura.totalConImpuestos().stream().map(this::toPayload).toList(),
+        infoFactura.pagos().stream().map(this::toPayload).toList()
+    );
+  }
+
+  private ComprobantePayload.PagoPayload toPayload(Pago pago) {
+    return new ComprobantePayload.PagoPayload(
+        pago.formaPago(),
+        pago.total(),
+        pago.plazo(),
+        pago.unidadTiempo()
     );
   }
 
@@ -219,7 +230,17 @@ public class ComprobanteMapper {
         payload.propina(),
         payload.importeTotal(),
         payload.moneda(),
-        payload.totalConImpuestos().stream().map(this::toTotalImpuesto).toList()
+        payload.totalConImpuestos().stream().map(this::toTotalImpuesto).toList(),
+        payload.pagos() == null ? List.of() : payload.pagos().stream().map(this::toPago).toList()
+    );
+  }
+
+  private Pago toPago(ComprobantePayload.PagoPayload payload) {
+    return new Pago(
+        payload.formaPago(),
+        payload.total(),
+        payload.plazo(),
+        payload.unidadTiempo()
     );
   }
 

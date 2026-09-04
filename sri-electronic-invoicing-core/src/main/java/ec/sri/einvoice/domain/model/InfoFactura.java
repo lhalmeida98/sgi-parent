@@ -20,6 +20,41 @@ public final class InfoFactura implements InfoDocumento {
   private final BigDecimal importeTotal;
   private final String moneda;
   private final List<TotalImpuesto> totalConImpuestos;
+  private final List<Pago> pagos;
+
+  public InfoFactura(
+      LocalDate fechaEmision,
+      String dirEstablecimiento,
+      String contribuyenteEspecial,
+      String obligadoContabilidad,
+      TipoIdentificacion tipoIdentificacionComprador,
+      String razonSocialComprador,
+      String identificacionComprador,
+      String direccionComprador,
+      BigDecimal totalSinImpuestos,
+      BigDecimal totalDescuento,
+      BigDecimal propina,
+      BigDecimal importeTotal,
+      String moneda,
+      List<TotalImpuesto> totalConImpuestos,
+      List<Pago> pagos
+  ) {
+    this.fechaEmision = Objects.requireNonNull(fechaEmision, "fechaEmision");
+    this.dirEstablecimiento = Objects.requireNonNull(dirEstablecimiento, "dirEstablecimiento");
+    this.contribuyenteEspecial = contribuyenteEspecial;
+    this.obligadoContabilidad = obligadoContabilidad;
+    this.tipoIdentificacionComprador = Objects.requireNonNull(tipoIdentificacionComprador, "tipoIdentificacionComprador");
+    this.razonSocialComprador = Objects.requireNonNull(razonSocialComprador, "razonSocialComprador");
+    this.identificacionComprador = Objects.requireNonNull(identificacionComprador, "identificacionComprador");
+    this.direccionComprador = direccionComprador;
+    this.totalSinImpuestos = Objects.requireNonNull(totalSinImpuestos, "totalSinImpuestos");
+    this.totalDescuento = Objects.requireNonNull(totalDescuento, "totalDescuento");
+    this.propina = Objects.requireNonNull(propina, "propina");
+    this.importeTotal = Objects.requireNonNull(importeTotal, "importeTotal");
+    this.moneda = Objects.requireNonNull(moneda, "moneda");
+    this.totalConImpuestos = List.copyOf(totalConImpuestos);
+    this.pagos = List.copyOf(pagos == null ? List.of() : pagos);
+  }
 
   public InfoFactura(
       LocalDate fechaEmision,
@@ -37,20 +72,23 @@ public final class InfoFactura implements InfoDocumento {
       String moneda,
       List<TotalImpuesto> totalConImpuestos
   ) {
-    this.fechaEmision = Objects.requireNonNull(fechaEmision, "fechaEmision");
-    this.dirEstablecimiento = Objects.requireNonNull(dirEstablecimiento, "dirEstablecimiento");
-    this.contribuyenteEspecial = contribuyenteEspecial;
-    this.obligadoContabilidad = obligadoContabilidad;
-    this.tipoIdentificacionComprador = Objects.requireNonNull(tipoIdentificacionComprador, "tipoIdentificacionComprador");
-    this.razonSocialComprador = Objects.requireNonNull(razonSocialComprador, "razonSocialComprador");
-    this.identificacionComprador = Objects.requireNonNull(identificacionComprador, "identificacionComprador");
-    this.direccionComprador = direccionComprador;
-    this.totalSinImpuestos = Objects.requireNonNull(totalSinImpuestos, "totalSinImpuestos");
-    this.totalDescuento = Objects.requireNonNull(totalDescuento, "totalDescuento");
-    this.propina = Objects.requireNonNull(propina, "propina");
-    this.importeTotal = Objects.requireNonNull(importeTotal, "importeTotal");
-    this.moneda = Objects.requireNonNull(moneda, "moneda");
-    this.totalConImpuestos = List.copyOf(totalConImpuestos);
+    this(
+        fechaEmision,
+        dirEstablecimiento,
+        contribuyenteEspecial,
+        obligadoContabilidad,
+        tipoIdentificacionComprador,
+        razonSocialComprador,
+        identificacionComprador,
+        direccionComprador,
+        totalSinImpuestos,
+        totalDescuento,
+        propina,
+        importeTotal,
+        moneda,
+        totalConImpuestos,
+        List.of()
+    );
   }
 
   public InfoFactura(
@@ -80,7 +118,8 @@ public final class InfoFactura implements InfoDocumento {
         propina,
         importeTotal,
         moneda,
-        totalConImpuestos
+        totalConImpuestos,
+        List.of()
     );
   }
 
@@ -143,5 +182,9 @@ public final class InfoFactura implements InfoDocumento {
 
   public List<TotalImpuesto> totalConImpuestos() {
     return totalConImpuestos;
+  }
+
+  public List<Pago> pagos() {
+    return pagos;
   }
 }

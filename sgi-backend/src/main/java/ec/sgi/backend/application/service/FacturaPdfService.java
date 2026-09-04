@@ -25,12 +25,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +42,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class FacturaPdfService implements GenerarFacturaPdfUseCase {
   private static final DateTimeFormatter FECHA_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
   private static final DateTimeFormatter FECHA_HORA_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+  private static final Pattern DIAS_CREDITO_PATTERN = Pattern.compile("(\\d{1,3})");
+  private static final int DIAS_CREDITO_DEFAULT = 30;
   private final FacturaRepository facturaRepository;
   private final EmpresaRepository empresaRepository;
   private final ClienteRepository clienteRepository;
@@ -111,10 +116,12 @@ public class FacturaPdfService implements GenerarFacturaPdfUseCase {
           .append("</tr>");
     }
 
-    String pagosRows = buildPagoRow(factura.pagos(), factura.totales().importeTotal());
+    Integer creditoDiasRide = resolveCreditoDias(factura.pagos(), cliente);
+    String pagosRows = buildPagoRow(factura.pagos(), factura.totales().importeTotal(), creditoDiasRide);
     String adicionalesRows = buildInfoAdicionalRows(
         cliente,
-        dirEstablecimiento,
+        factura,
+        creditoDiasRide,
         factura.observaciones(),
         info.regimenTributario().leyendaSri()
     );
@@ -379,11 +386,17 @@ public class FacturaPdfService implements GenerarFacturaPdfUseCase {
         .replace("'", "&#39;");
   }
 
-  private String buildPagoRow(List<FacturaPago> pagos, BigDecimal totalFactura) {
+  private String buildPagoRow(List<FacturaPago> pagos, BigDecimal totalFactura, Integer creditoDias) {
     if (pagos == null || pagos.isEmpty()) {
+      if (creditoDias != null && creditoDias > 0) {
+        return "<tr><td>OTROS CON UTILIZACION DEL SISTEMA FINANCIERO</td><td class='text-right'>"
+            + formatMoney(totalFactura) + "</td></tr>";
+      }
       return "<tr><td></td><td class='text-right'></td></tr>";
     }
-    String formaPago = pagos.get(0).formaPago();
+    String formaPago = creditoDias != null && creditoDias > 0
+        ? "OTROS CON UTILIZACION DEL SISTEMA FINANCIERO"
+        : formaPagoRide(pagos.get(0).formaPago());
     BigDecimal suma = BigDecimal.ZERO;
     for (FacturaPago pago : pagos) {
       if (pago != null && pago.monto() != null) {
@@ -398,15 +411,21 @@ public class FacturaPdfService implements GenerarFacturaPdfUseCase {
 
   private String buildInfoAdicionalRows(
       Cliente cliente,
-      String dirEstablecimiento,
+      Factura factura,
+      Integer creditoDias,
       String observaciones,
       String leyendaRimpe
   ) {
     StringBuilder rows = new StringBuilder();
     appendInfoAdicionalRow(rows, "Correo", cliente.email());
-    appendInfoAdicionalRow(rows, "Direccion cliente", cliente.direccion());
+    if (creditoDias != null && creditoDias > 0) {
+      appendInfoAdicionalRow(rows, "Forma de pago", "CREDITO " + creditoDias + " dias");
+      appendInfoAdicionalRow(rows, "Credito", creditoDias + " dias");
+      if (factura.fechaEmision() != null) {
+        appendInfoAdicionalRow(rows, "Factura vence", formatFecha(factura.fechaEmision().plusDays(creditoDias)));
+      }
+    }
     appendInfoAdicionalRow(rows, "Observacion", observaciones);
-    appendInfoAdicionalRow(rows, "Direccion establecimiento", dirEstablecimiento);
     appendInfoAdicionalRow(rows, "Adicional", leyendaRimpe);
     if (rows.isEmpty()) {
       rows.append("<tr><td></td><td></td></tr>\n");
@@ -423,6 +442,69 @@ public class FacturaPdfService implements GenerarFacturaPdfUseCase {
         .append(":</strong></td><td>")
         .append(escapeHtml(value.trim()))
         .append("</td></tr>\n");
+  }
+
+  private String formaPagoRide(String formaPago) {
+    String normalizada = normalizeFormaPago(formaPago);
+    if (normalizada.contains("CREDITO") || normalizada.contains("TRANSFERENCIA") || normalizada.contains("OTRO")) {
+      return "OTROS CON UTILIZACION DEL SISTEMA FINANCIERO";
+    }
+    if (normalizada.contains("TARJETA")) {
+      return "TARJETA DE CREDITO";
+    }
+    return "SIN UTILIZACION DEL SISTEMA FINANCIERO";
+  }
+
+  private Integer resolveCreditoDias(List<FacturaPago> pagos, Cliente cliente) {
+    Integer max = null;
+    if (pagos != null) {
+      for (FacturaPago pago : pagos) {
+        if (!normalizeFormaPago(pago.formaPago()).contains("CREDITO")) {
+          continue;
+        }
+        Integer parsed = parseCreditoDias(pago.formaPago());
+        int dias = sanitizeCreditoDias(parsed != null ? parsed : cliente.creditoDias());
+        max = max == null ? dias : Math.max(max, dias);
+      }
+    }
+    if (max != null) {
+      return max;
+    }
+    if (pagos != null && !pagos.isEmpty()) {
+      return null;
+    }
+    if (cliente.creditoDias() != null && cliente.creditoDias() > 0) {
+      return sanitizeCreditoDias(cliente.creditoDias());
+    }
+    return null;
+  }
+
+  private Integer parseCreditoDias(String formaPago) {
+    Matcher matcher = DIAS_CREDITO_PATTERN.matcher(formaPago == null ? "" : formaPago);
+    if (!matcher.find()) {
+      return null;
+    }
+    try {
+      return Integer.parseInt(matcher.group(1));
+    } catch (NumberFormatException ex) {
+      return null;
+    }
+  }
+
+  private int sanitizeCreditoDias(Integer dias) {
+    if (dias == null || dias < 0) {
+      return DIAS_CREDITO_DEFAULT;
+    }
+    return Math.min(dias, 365);
+  }
+
+  private String normalizeFormaPago(String formaPago) {
+    if (formaPago == null) {
+      return "";
+    }
+    String sinAcentos = Normalizer.normalize(formaPago, Normalizer.Form.NFD)
+        .replaceAll("\\p{M}", "");
+    return sinAcentos.trim().toUpperCase(Locale.ROOT).replaceAll("[^A-Z0-9]", "");
   }
 
   private String resolveDirEstablecimiento(String dirEstablecimiento, String dirMatriz) {

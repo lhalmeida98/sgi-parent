@@ -48,8 +48,7 @@ public class SriContribuyenteApiClient implements SriContribuyentePort {
       return Optional.empty();
     }
     try {
-      String encoded = URLEncoder.encode(ruc.trim(), StandardCharsets.UTF_8);
-      String url = baseUrl + "?&ruc=" + encoded;
+      String url = buildConsultaUrl(ruc.trim());
       HttpRequest request = HttpRequest.newBuilder(URI.create(url))
           .GET()
           .timeout(timeout)
@@ -73,6 +72,7 @@ public class SriContribuyenteApiClient implements SriContribuyentePort {
           item.regimen(),
           item.categoria(),
           item.obligadoLlevarContabilidad(),
+          null,
           item.agenteRetencion(),
           item.contribuyenteEspecial(),
           item.contribuyenteFantasma(),
@@ -82,6 +82,20 @@ public class SriContribuyenteApiClient implements SriContribuyentePort {
       log.warn("No se pudo consultar SRI para RUC {}: {}", ruc, ex.getMessage());
       throw new IllegalStateException("No se pudo consultar SRI");
     }
+  }
+
+  private String buildConsultaUrl(String ruc) {
+    String encoded = URLEncoder.encode(ruc, StandardCharsets.UTF_8);
+    if (baseUrl.contains("{ruc}")) {
+      return baseUrl.replace("{ruc}", encoded);
+    }
+    String separator;
+    if (baseUrl.contains("?")) {
+      separator = baseUrl.endsWith("?") || baseUrl.endsWith("&") ? "" : "&";
+    } else {
+      separator = "?=true&";
+    }
+    return baseUrl + separator + "ruc=" + encoded;
   }
 
   private record SriContribuyenteResponse(

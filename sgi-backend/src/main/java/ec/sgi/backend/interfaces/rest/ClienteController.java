@@ -3,9 +3,11 @@ package ec.sgi.backend.interfaces.rest;
 import ec.sgi.backend.application.dto.ClienteCreateRequest;
 import ec.sgi.backend.application.dto.ClienteCreateResult;
 import ec.sgi.backend.application.dto.ClienteResult;
+import ec.sgi.backend.application.dto.ClienteSriConsultaResult;
 import ec.sgi.backend.application.dto.ClienteUpdateRequest;
 import ec.sgi.backend.application.port.in.ActualizarClienteCommand;
 import ec.sgi.backend.application.port.in.ActualizarClienteUseCase;
+import ec.sgi.backend.application.port.in.ConsultarClienteSriUseCase;
 import ec.sgi.backend.application.port.in.CrearClienteCommand;
 import ec.sgi.backend.application.port.in.CrearClienteUseCase;
 import ec.sgi.backend.application.port.in.ListarClientesUseCase;
@@ -27,6 +29,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -36,6 +39,7 @@ public class ClienteController {
   private final CrearClienteUseCase crearClienteUseCase;
   private final ListarClientesUseCase listarClientesUseCase;
   private final ActualizarClienteUseCase actualizarClienteUseCase;
+  private final ConsultarClienteSriUseCase consultarClienteSriUseCase;
   private final CurrentUserService currentUserService;
   private final PermisoService permisoService;
 
@@ -43,12 +47,14 @@ public class ClienteController {
       CrearClienteUseCase crearClienteUseCase,
       ListarClientesUseCase listarClientesUseCase,
       ActualizarClienteUseCase actualizarClienteUseCase,
+      ConsultarClienteSriUseCase consultarClienteSriUseCase,
       CurrentUserService currentUserService,
       PermisoService permisoService
   ) {
     this.crearClienteUseCase = crearClienteUseCase;
     this.listarClientesUseCase = listarClientesUseCase;
     this.actualizarClienteUseCase = actualizarClienteUseCase;
+    this.consultarClienteSriUseCase = consultarClienteSriUseCase;
     this.currentUserService = currentUserService;
     this.permisoService = permisoService;
   }
@@ -88,6 +94,26 @@ public class ClienteController {
   public ResponseEntity<List<ClienteResult>> listar() {
     permisoService.requirePermiso("CLIENTES");
     return ResponseEntity.ok(listarClientesUseCase.listar(currentUserService.getEmpresaId()));
+  }
+
+  @GetMapping("/consulta-sri")
+  @Operation(summary = "Consultar cliente en SRI", description = "Consulta datos del cliente por RUC.")
+  @SecurityRequirement(name = "bearerAuth")
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Consulta realizada"),
+      @ApiResponse(responseCode = "400", description = "Identificacion requerida"),
+      @ApiResponse(responseCode = "401", description = "No autorizado"),
+      @ApiResponse(responseCode = "403", description = "Sin permisos")
+  })
+  public ResponseEntity<ClienteSriConsultaResult> consultarSri(
+      @Parameter(description = "Numero de RUC") @RequestParam String identificacion
+  ) {
+    permisoService.requirePermiso("CLIENTES");
+    ClienteSriConsultaResult result = consultarClienteSriUseCase.consultar(identificacion);
+    if (!result.encontrado() && "Identificacion requerida".equalsIgnoreCase(result.mensaje())) {
+      return ResponseEntity.badRequest().body(result);
+    }
+    return ResponseEntity.ok(result);
   }
 
   @PutMapping("/{clienteId}")

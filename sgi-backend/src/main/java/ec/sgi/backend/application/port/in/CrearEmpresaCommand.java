@@ -13,6 +13,7 @@ public record CrearEmpresaCommand(
     String estab,
     String ptoEmi,
     String secuencial,
+    String secuencialPruebas,
     boolean obligadoContabilidad,
     RegimenTributario regimenTributario,
     boolean contribuyenteEspecial,

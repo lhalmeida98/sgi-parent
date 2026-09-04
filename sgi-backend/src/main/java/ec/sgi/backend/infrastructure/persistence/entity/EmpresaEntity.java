@@ -22,6 +22,7 @@ public class EmpresaEntity {
   private String estab;
   private String ptoEmi;
   private String secuencial;
+  private String secuencialPruebas;
   private String logoRuta;
   private boolean obligadoContabilidad;
   private boolean regimenRimpe;
@@ -112,6 +113,14 @@ public class EmpresaEntity {
 
   public void setSecuencial(String secuencial) {
     this.secuencial = secuencial;
+  }
+
+  public String getSecuencialPruebas() {
+    return secuencialPruebas;
+  }
+
+  public void setSecuencialPruebas(String secuencialPruebas) {
+    this.secuencialPruebas = secuencialPruebas;
   }
 
   public String getLogoRuta() {

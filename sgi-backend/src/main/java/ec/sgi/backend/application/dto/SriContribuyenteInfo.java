@@ -9,6 +9,7 @@ public record SriContribuyenteInfo(
     String regimen,
     String categoria,
     String obligadoLlevarContabilidad,
+    String direccionCompleta,
     String agenteRetencion,
     String contribuyenteEspecial,
     String contribuyenteFantasma,

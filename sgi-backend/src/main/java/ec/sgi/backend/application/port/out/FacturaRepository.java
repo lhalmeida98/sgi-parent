@@ -47,6 +47,14 @@ public interface FacturaRepository {
       org.springframework.data.domain.Pageable pageable
   );
 
+  org.springframework.data.domain.Page<Factura> findByEmpresaIdAndFechaEmisionBetweenAndAmbientes(
+      Long empresaId,
+      java.time.LocalDate fechaDesde,
+      java.time.LocalDate fechaHasta,
+      java.util.List<String> ambientes,
+      org.springframework.data.domain.Pageable pageable
+  );
+
   java.util.Optional<Factura> findByEmpresaIdAndInfoEstabAndInfoPtoEmiAndInfoSecuencial(
       Long empresaId,
       String infoEstab,

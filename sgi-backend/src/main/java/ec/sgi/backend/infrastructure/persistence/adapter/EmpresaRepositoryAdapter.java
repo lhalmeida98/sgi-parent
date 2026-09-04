@@ -59,6 +59,7 @@ public class EmpresaRepositoryAdapter implements EmpresaRepository {
         entity.getEstab(),
         entity.getPtoEmi(),
         entity.getSecuencial(),
+        entity.getSecuencialPruebas(),
         entity.getLogoRuta(),
         entity.isObligadoContabilidad(),
         RegimenTributario.from(entity.getRegimenTributario(), entity.isRegimenRimpe()),
@@ -81,6 +82,7 @@ public class EmpresaRepositoryAdapter implements EmpresaRepository {
     entity.setEstab(empresa.estab());
     entity.setPtoEmi(empresa.ptoEmi());
     entity.setSecuencial(empresa.secuencial());
+    entity.setSecuencialPruebas(empresa.secuencialPruebas());
     entity.setLogoRuta(empresa.logoRuta());
     entity.setObligadoContabilidad(empresa.obligadoContabilidad());
     entity.setRegimenRimpe(empresa.regimenRimpe());

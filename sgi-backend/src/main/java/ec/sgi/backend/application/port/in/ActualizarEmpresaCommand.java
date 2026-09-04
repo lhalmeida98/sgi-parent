@@ -12,6 +12,7 @@ public record ActualizarEmpresaCommand(
     String estab,
     String ptoEmi,
     String secuencial,
+    String secuencialPruebas,
     boolean obligadoContabilidad,
     RegimenTributario regimenTributario,
     boolean contribuyenteEspecial,

@@ -13,6 +13,7 @@ public record Empresa(
     String estab,
     String ptoEmi,
     String secuencial,
+    String secuencialPruebas,
     String logoRuta,
     boolean obligadoContabilidad,
     RegimenTributario regimenTributario,
@@ -31,9 +32,53 @@ public record Empresa(
     Objects.requireNonNull(estab, "estab");
     Objects.requireNonNull(ptoEmi, "ptoEmi");
     Objects.requireNonNull(secuencial, "secuencial");
+    if (secuencialPruebas == null || secuencialPruebas.isBlank()) {
+      secuencialPruebas = secuencial;
+    }
     if (regimenTributario == null) {
       regimenTributario = RegimenTributario.GENERAL;
     }
+  }
+
+  public Empresa(
+      Long id,
+      String ambiente,
+      String tipoEmision,
+      String razonSocial,
+      String nombreComercial,
+      String ruc,
+      String dirMatriz,
+      String estab,
+      String ptoEmi,
+      String secuencial,
+      String logoRuta,
+      boolean obligadoContabilidad,
+      RegimenTributario regimenTributario,
+      boolean contribuyenteEspecial,
+      String numeroContribuyenteEspecial,
+      boolean agenteRetencion,
+      Integer creditoDiasDefault
+  ) {
+    this(
+        id,
+        ambiente,
+        tipoEmision,
+        razonSocial,
+        nombreComercial,
+        ruc,
+        dirMatriz,
+        estab,
+        ptoEmi,
+        secuencial,
+        secuencial,
+        logoRuta,
+        obligadoContabilidad,
+        regimenTributario,
+        contribuyenteEspecial,
+        numeroContribuyenteEspecial,
+        agenteRetencion,
+        creditoDiasDefault
+    );
   }
 
   public Empresa withSecuencial(String nuevoSecuencial) {
@@ -48,6 +93,30 @@ public record Empresa(
         estab,
         ptoEmi,
         nuevoSecuencial,
+        secuencialPruebas,
+        logoRuta,
+        obligadoContabilidad,
+        regimenTributario,
+        contribuyenteEspecial,
+        numeroContribuyenteEspecial,
+        agenteRetencion,
+        creditoDiasDefault
+    );
+  }
+
+  public Empresa withSecuencialPruebas(String nuevoSecuencialPruebas) {
+    return new Empresa(
+        id,
+        ambiente,
+        tipoEmision,
+        razonSocial,
+        nombreComercial,
+        ruc,
+        dirMatriz,
+        estab,
+        ptoEmi,
+        secuencial,
+        nuevoSecuencialPruebas,
         logoRuta,
         obligadoContabilidad,
         regimenTributario,
@@ -70,6 +139,7 @@ public record Empresa(
         estab,
         ptoEmi,
         secuencial,
+        secuencialPruebas,
         nuevaRuta,
         obligadoContabilidad,
         regimenTributario,

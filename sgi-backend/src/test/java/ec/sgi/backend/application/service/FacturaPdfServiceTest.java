@@ -7,6 +7,7 @@ import ec.sgi.backend.domain.model.Empresa;
 import ec.sgi.backend.domain.model.Factura;
 import ec.sgi.backend.domain.model.FacturaEstado;
 import ec.sgi.backend.domain.model.FacturaItem;
+import ec.sgi.backend.domain.model.FacturaPago;
 import ec.sgi.backend.domain.model.FacturaTotales;
 import ec.sgi.backend.domain.model.InfoTributariaData;
 import ec.sgi.backend.domain.model.RegimenTributario;
@@ -79,7 +80,49 @@ class FacturaPdfServiceTest {
     assertThat(html).doesNotContain("27/08/2026 00:00:00");
   }
 
+  @Test
+  void rideMuestraPagoCreditoYFechaVencimiento() {
+    Factura factura = factura(
+        info("EMPRESA A", "COMERCIAL A", "1790012345001", false, RegimenTributario.GENERAL),
+        LocalDate.of(2026, 9, 2),
+        LocalDateTime.of(2026, 9, 2, 10, 11, 12),
+        List.of(new FacturaPago("CREDITO", new BigDecimal("11.50")))
+    );
+
+    String html = service.buildHtml(factura, empresaViva("EMPRESA A", "1790012345001"), clienteCredito(30));
+
+    assertThat(html).contains("OTROS CON UTILIZACION DEL SISTEMA FINANCIERO");
+    assertThat(html).contains("CREDITO 30 dias");
+    assertThat(html).contains("Factura vence");
+    assertThat(html).contains("02/10/2026");
+  }
+
+  @Test
+  void rideNoMuestraCreditoSiLaFacturaTienePagoEfectivo() {
+    Factura factura = factura(
+        info("EMPRESA A", "COMERCIAL A", "1790012345001", false, RegimenTributario.GENERAL),
+        LocalDate.of(2026, 9, 2),
+        LocalDateTime.of(2026, 9, 2, 10, 11, 12),
+        List.of(new FacturaPago("EFECTIVO", new BigDecimal("11.50")))
+    );
+
+    String html = service.buildHtml(factura, empresaViva("EMPRESA A", "1790012345001"), clienteCredito(30));
+
+    assertThat(html).contains("SIN UTILIZACION DEL SISTEMA FINANCIERO");
+    assertThat(html).doesNotContain("Factura vence");
+    assertThat(html).doesNotContain("CREDITO 30 dias");
+  }
+
   private Factura factura(InfoTributariaData info, LocalDate fechaEmision, LocalDateTime fechaAutorizacion) {
+    return factura(info, fechaEmision, fechaAutorizacion, List.of());
+  }
+
+  private Factura factura(
+      InfoTributariaData info,
+      LocalDate fechaEmision,
+      LocalDateTime fechaAutorizacion,
+      List<FacturaPago> pagos
+  ) {
     return new Factura(
         1L,
         10L,
@@ -107,7 +150,7 @@ class FacturaPdfServiceTest {
             new BigDecimal("1.50"),
             new BigDecimal("11.50")
         ),
-        List.of(),
+        pagos,
         FacturaEstado.AUTORIZADA,
         "2708202601179001234500110010010000000011234567811",
         null,
@@ -169,6 +212,10 @@ class FacturaPdfServiceTest {
   }
 
   private Cliente cliente() {
+    return clienteCredito(null);
+  }
+
+  private Cliente clienteCredito(Integer creditoDias) {
     return new Cliente(
         20L,
         10L,
@@ -177,7 +224,7 @@ class FacturaPdfServiceTest {
         "CLIENTE",
         "cliente@example.com",
         "Direccion cliente",
-        null
+        creditoDias
     );
   }
 }

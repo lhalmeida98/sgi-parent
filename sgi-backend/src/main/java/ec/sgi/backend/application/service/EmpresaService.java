@@ -60,6 +60,8 @@ public class EmpresaService implements CrearEmpresaUseCase, ListarEmpresasUseCas
   @Override
   public EmpresaCreateResult crear(CrearEmpresaCommand command) {
     validarSecuencial(command.secuencial());
+    String secuencialPruebas = resolveSecuencialPruebas(command.secuencialPruebas(), command.secuencial());
+    validarSecuencial(secuencialPruebas);
     validarConfiguracionTributaria(command.regimenTributario(), command.contribuyenteEspecial(),
         command.numeroContribuyenteEspecial());
     Integer creditoDiasDefault = sanitizeCreditoDias(command.creditoDiasDefault());
@@ -74,6 +76,7 @@ public class EmpresaService implements CrearEmpresaUseCase, ListarEmpresasUseCas
         command.estab(),
         command.ptoEmi(),
         command.secuencial().trim(),
+        secuencialPruebas,
         null,
         command.obligadoContabilidad(),
         command.regimenTributario(),
@@ -98,6 +101,8 @@ public class EmpresaService implements CrearEmpresaUseCase, ListarEmpresasUseCas
     Empresa existente = empresaRepository.findById(empresaId)
         .orElseThrow(() -> new ResourceNotFoundException("Empresa no encontrada"));
     validarSecuencial(command.secuencial());
+    String secuencialPruebas = resolveSecuencialPruebas(command.secuencialPruebas(), existente.secuencialPruebas());
+    validarSecuencial(secuencialPruebas);
     validarConfiguracionTributaria(command.regimenTributario(), command.contribuyenteEspecial(),
         command.numeroContribuyenteEspecial());
     Integer creditoDiasDefault = command.creditoDiasDefault() == null
@@ -115,6 +120,7 @@ public class EmpresaService implements CrearEmpresaUseCase, ListarEmpresasUseCas
         command.estab(),
         command.ptoEmi(),
         command.secuencial().trim(),
+        secuencialPruebas,
         existente.logoRuta(),
         command.obligadoContabilidad(),
         command.regimenTributario(),
@@ -177,6 +183,7 @@ public class EmpresaService implements CrearEmpresaUseCase, ListarEmpresasUseCas
         empresa.estab(),
         empresa.ptoEmi(),
         empresa.secuencial(),
+        empresa.secuencialPruebas(),
         empresa.logoRuta(),
         empresa.obligadoContabilidad(),
         empresa.regimenTributario().name(),
@@ -220,6 +227,11 @@ public class EmpresaService implements CrearEmpresaUseCase, ListarEmpresasUseCas
       return CREDITO_DIAS_MAX;
     }
     return dias;
+  }
+
+  private String resolveSecuencialPruebas(String value, String fallback) {
+    String normalized = normalizeNullable(value);
+    return normalized == null ? fallback.trim() : normalized;
   }
 
   private void validarFirma(SubirFirmaElectronicaCommand command) {

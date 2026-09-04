@@ -165,6 +165,11 @@ public class UsuarioService implements CrearUsuarioUseCase, ListarUsuariosUseCas
 
   @Override
   public List<UsuarioEmpresaDetalleResult> listarEmpresas(Long empresaId, Long usuarioId) {
+    if (usuarioId == null && empresaId != null) {
+      return empresaRepository.findById(empresaId)
+          .map(empresa -> List.of(new UsuarioEmpresaDetalleResult(toEmpresaResult(empresa), true)))
+          .orElse(List.of());
+    }
     Usuario usuario = (empresaId == null)
         ? usuarioRepository.findById(usuarioId)
             .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"))
@@ -339,6 +344,7 @@ public class UsuarioService implements CrearUsuarioUseCase, ListarUsuariosUseCas
         empresa.estab(),
         empresa.ptoEmi(),
         empresa.secuencial(),
+        empresa.secuencialPruebas(),
         empresa.logoRuta(),
         empresa.obligadoContabilidad(),
         empresa.regimenTributario().name(),

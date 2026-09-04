@@ -20,6 +20,7 @@ public interface FacturaJpaRepository extends JpaRepository<FacturaEntity, Long>
       where f.empresaId = :empresaId
         and f.fechaEmision between :fechaDesde and :fechaHasta
         and f.estado = :estado
+        and upper(f.infoAmbiente) in ('2', 'PRODUCCION')
       """)
   java.math.BigDecimal sumImporteTotalByEmpresaIdAndFechaEmisionBetweenAndEstado(
       @Param("empresaId") Long empresaId,
@@ -39,6 +40,7 @@ public interface FacturaJpaRepository extends JpaRepository<FacturaEntity, Long>
       from FacturaEntity f
       where f.empresaId = :empresaId
         and f.fechaEmision between :fechaDesde and :fechaHasta
+        and upper(f.infoAmbiente) in ('2', 'PRODUCCION')
       order by f.fechaEmision desc, f.id desc
       """)
   List<FacturaResumenProjection> findUltimasResumen(
@@ -52,6 +54,20 @@ public interface FacturaJpaRepository extends JpaRepository<FacturaEntity, Long>
       Long empresaId,
       java.time.LocalDate fechaDesde,
       java.time.LocalDate fechaHasta,
+      org.springframework.data.domain.Pageable pageable);
+
+  @Query("""
+      select f
+      from FacturaEntity f
+      where f.empresaId = :empresaId
+        and f.fechaEmision between :fechaDesde and :fechaHasta
+        and upper(f.infoAmbiente) in :ambientes
+      """)
+  org.springframework.data.domain.Page<FacturaEntity> findByEmpresaIdAndFechaEmisionBetweenAndAmbientes(
+      @Param("empresaId") Long empresaId,
+      @Param("fechaDesde") java.time.LocalDate fechaDesde,
+      @Param("fechaHasta") java.time.LocalDate fechaHasta,
+      @Param("ambientes") java.util.List<String> ambientes,
       org.springframework.data.domain.Pageable pageable);
 
   java.util.Optional<FacturaEntity> findByEmpresaIdAndInfoEstabAndInfoPtoEmiAndInfoSecuencial(

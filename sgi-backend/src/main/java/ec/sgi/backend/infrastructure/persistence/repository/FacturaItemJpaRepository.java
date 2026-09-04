@@ -18,6 +18,7 @@ public interface FacturaItemJpaRepository extends JpaRepository<FacturaItemEntit
       where f.empresaId = :empresaId
         and f.fechaEmision between :fechaDesde and :fechaHasta
         and f.estado = :estado
+        and upper(f.infoAmbiente) in ('2', 'PRODUCCION')
       group by i.productoId, i.descripcion
       order by sum(i.precioTotalSinImpuesto) desc
       """)

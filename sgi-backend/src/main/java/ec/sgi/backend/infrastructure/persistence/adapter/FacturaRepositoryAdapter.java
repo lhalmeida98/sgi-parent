@@ -130,6 +130,23 @@ public class FacturaRepositoryAdapter implements FacturaRepository {
   }
 
   @Override
+  public org.springframework.data.domain.Page<Factura> findByEmpresaIdAndFechaEmisionBetweenAndAmbientes(
+      Long empresaId,
+      java.time.LocalDate fechaDesde,
+      java.time.LocalDate fechaHasta,
+      List<String> ambientes,
+      org.springframework.data.domain.Pageable pageable) {
+    return facturaJpaRepository.findByEmpresaIdAndFechaEmisionBetweenAndAmbientes(
+            empresaId,
+            fechaDesde,
+            fechaHasta,
+            ambientes,
+            pageable
+        )
+        .map(mapper::toDomain);
+  }
+
+  @Override
   public Optional<Factura> findByEmpresaIdAndInfoEstabAndInfoPtoEmiAndInfoSecuencial(
       Long empresaId,
       String infoEstab,

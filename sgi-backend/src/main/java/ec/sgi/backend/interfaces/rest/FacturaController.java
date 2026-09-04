@@ -173,6 +173,8 @@ public class FacturaController {
       @Parameter(description = "Fecha desde (YYYY-MM-DD)") @RequestParam("fechaDesde") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
       @Parameter(description = "Fecha hasta (YYYY-MM-DD)") @RequestParam(value = "fechaHasta", required = false)
       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta,
+      @Parameter(description = "Ambiente: PRODUCCION/2 o PRUEBAS/1") @RequestParam(value = "ambiente", required = false)
+      String ambiente,
       @Parameter(description = "Pagina (0-based)") @RequestParam(value = "page", required = false, defaultValue = "0") int page,
       @Parameter(description = "Tamano de pagina") @RequestParam(value = "size", required = false, defaultValue = "20") int size
   ) {
@@ -183,7 +185,9 @@ public class FacturaController {
     }
     int pageSize = Math.min(Math.max(size, 1), 100);
     int pageIndex = Math.max(page, 0);
-    return ResponseEntity.ok(listarFacturasUseCase.listarPorEmpresa(empresaId, fechaDesde, fechaHasta, pageIndex, pageSize));
+    return ResponseEntity.ok(
+        listarFacturasUseCase.listarPorEmpresa(empresaId, fechaDesde, fechaHasta, pageIndex, pageSize, ambiente)
+    );
   }
 
   @PostMapping("/empresa/{empresaId}/en-proceso/reenviar")

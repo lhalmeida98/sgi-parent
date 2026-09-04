@@ -43,7 +43,16 @@ public record ComprobantePayload(
       BigDecimal propina,
       BigDecimal importeTotal,
       String moneda,
-      List<TotalImpuestoPayload> totalConImpuestos
+      List<TotalImpuestoPayload> totalConImpuestos,
+      List<PagoPayload> pagos
+  ) {
+  }
+
+  public record PagoPayload(
+      String formaPago,
+      BigDecimal total,
+      Integer plazo,
+      String unidadTiempo
   ) {
   }
 

@@ -8,7 +8,9 @@ import ec.sri.einvoice.domain.model.ClaveAcceso;
 import ec.sri.einvoice.domain.model.Comprobante;
 import ec.sri.einvoice.domain.model.InfoFactura;
 import ec.sri.einvoice.domain.model.InfoTributaria;
+import ec.sri.einvoice.domain.model.Pago;
 import ec.sri.einvoice.infrastructure.config.AppProperties;
+import java.math.BigDecimal;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -36,6 +38,16 @@ class SimpleXmlComprobanteGeneratorTest {
 
     assertThat(xml).doesNotContain("contribuyenteRimpe");
     assertThat(xml).contains("<obligadoContabilidad>SI</obligadoContabilidad>");
+    new XsdSriXmlValidator().validar(comprobante.tipo(), xml);
+  }
+
+  @Test
+  void generaFacturaConPagoCreditoYPlazo() {
+    Comprobante comprobante = facturaConPagoCredito();
+    String xml = new SimpleXmlComprobanteGenerator(new AppProperties()).generar(comprobante);
+
+    assertThat(xml).contains("<pagos><pago><formaPago>20</formaPago><total>112.00</total>"
+        + "<plazo>30</plazo><unidadTiempo>dias</unidadTiempo></pago></pagos>");
     new XsdSriXmlValidator().validar(comprobante.tipo(), xml);
   }
 
@@ -89,6 +101,46 @@ class SimpleXmlComprobanteGeneratorTest {
         ),
         base.estado(),
         infoTributaria.claveAcceso(),
+        base.xml(),
+        base.xmlFirmado(),
+        base.numeroAutorizacion(),
+        base.ultimoError(),
+        base.intentosEnvio(),
+        base.siguienteReintento(),
+        base.creadoEn(),
+        base.actualizadoEn()
+    );
+  }
+
+  private Comprobante facturaConPagoCredito() {
+    Comprobante base = facturaConDatosTributarios(null, "SI");
+    InfoFactura baseFactura = (InfoFactura) base.infoDocumento();
+    InfoFactura infoFactura = new InfoFactura(
+        baseFactura.fechaEmision(),
+        baseFactura.dirEstablecimiento(),
+        baseFactura.contribuyenteEspecial(),
+        baseFactura.obligadoContabilidad(),
+        baseFactura.tipoIdentificacionComprador(),
+        baseFactura.razonSocialComprador(),
+        baseFactura.identificacionComprador(),
+        baseFactura.direccionComprador(),
+        baseFactura.totalSinImpuestos(),
+        baseFactura.totalDescuento(),
+        baseFactura.propina(),
+        baseFactura.importeTotal(),
+        baseFactura.moneda(),
+        baseFactura.totalConImpuestos(),
+        List.of(new Pago("20", new BigDecimal("112.00"), 30, "dias"))
+    );
+    return Comprobante.reconstruir(
+        base.id(),
+        base.tipo(),
+        base.infoTributaria(),
+        infoFactura,
+        base.detalles(),
+        base.infoAdicional(),
+        base.estado(),
+        base.claveAcceso(),
         base.xml(),
         base.xmlFirmado(),
         base.numeroAutorizacion(),

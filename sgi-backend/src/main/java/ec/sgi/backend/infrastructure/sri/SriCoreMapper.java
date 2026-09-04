@@ -8,6 +8,7 @@ import ec.sgi.backend.application.dto.SriImpuestoDto;
 import ec.sgi.backend.application.dto.SriInfoFacturaDto;
 import ec.sgi.backend.application.dto.SriInfoTributariaDto;
 import ec.sgi.backend.application.dto.SriTotalImpuestoDto;
+import ec.sgi.backend.application.dto.SriPagoDto;
 import ec.sgi.backend.application.exception.BusinessRuleException;
 import ec.sri.einvoice.application.port.in.ConsultarComprobanteCommand;
 import ec.sri.einvoice.application.port.in.EmitirComprobanteCommand;
@@ -16,6 +17,7 @@ import ec.sri.einvoice.domain.model.CampoAdicional;
 import ec.sri.einvoice.domain.model.ClaveAcceso;
 import ec.sri.einvoice.domain.model.Detalle;
 import ec.sri.einvoice.domain.model.Impuesto;
+import ec.sri.einvoice.domain.model.Pago;
 import ec.sri.einvoice.domain.model.InfoFactura;
 import ec.sri.einvoice.domain.model.InfoTributaria;
 import ec.sri.einvoice.domain.model.TipoComprobante;
@@ -62,7 +64,8 @@ public final class SriCoreMapper {
         infoFacturaDto.propina(),
         infoFacturaDto.importeTotal(),
         infoFacturaDto.moneda(),
-        toTotalImpuestos(infoFacturaDto.totalConImpuestos())
+        toTotalImpuestos(infoFacturaDto.totalConImpuestos()),
+        toPagos(request.pagos())
     );
 
     return new EmitirComprobanteCommand(
@@ -108,6 +111,21 @@ public final class SriCoreMapper {
         .filter(campo -> campo != null && !isBlank(campo.nombre()) && !isBlank(campo.valor()))
         .limit(15)
         .map(campo -> new CampoAdicional(campo.nombre().trim(), campo.valor().trim()))
+        .toList();
+  }
+
+  private static List<Pago> toPagos(List<SriPagoDto> pagos) {
+    if (pagos == null || pagos.isEmpty()) {
+      return List.of();
+    }
+    return pagos.stream()
+        .filter(pago -> pago != null && !isBlank(pago.formaPago()) && pago.total() != null)
+        .map(pago -> new Pago(
+            pago.formaPago(),
+            pago.total(),
+            pago.plazo(),
+            pago.unidadTiempo()
+        ))
         .toList();
   }
 

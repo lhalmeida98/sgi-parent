@@ -8,6 +8,7 @@ import ec.sri.einvoice.domain.model.InfoDocumento;
 import ec.sri.einvoice.domain.model.InfoFactura;
 import ec.sri.einvoice.domain.model.InfoTributaria;
 import ec.sri.einvoice.domain.model.Impuesto;
+import ec.sri.einvoice.domain.model.Pago;
 import ec.sri.einvoice.domain.model.TipoComprobante;
 import ec.sri.einvoice.domain.model.TotalImpuesto;
 import ec.sri.einvoice.infrastructure.config.AppProperties;
@@ -77,6 +78,18 @@ public class SimpleXmlComprobanteGenerator implements XmlComprobanteGenerator {
     xml.append(tag("propina", infoFactura.propina().toPlainString()));
     xml.append(tag("importeTotal", infoFactura.importeTotal().toPlainString()));
     xml.append(tag("moneda", infoFactura.moneda()));
+    if (!infoFactura.pagos().isEmpty()) {
+      xml.append("<pagos>");
+      for (Pago pago : infoFactura.pagos()) {
+        xml.append("<pago>");
+        xml.append(tag("formaPago", pago.formaPago()));
+        xml.append(tag("total", pago.total().toPlainString()));
+        xml.append(optionalTag("plazo", pago.plazo() == null ? null : pago.plazo().toString()));
+        xml.append(optionalEscapedTag("unidadTiempo", pago.unidadTiempo()));
+        xml.append("</pago>");
+      }
+      xml.append("</pagos>");
+    }
     xml.append("</infoFactura>");
 
     xml.append("<detalles>");
